@@ -1,12 +1,17 @@
 import json
+import functools
+import io
 
 from Bio import Entrez, Medline
-from quart import Quart, request, jsonify
+from quart import Quart, request, jsonify, send_file
 import aiohttp
 import asyncio
 
 
 app = Quart(__name__)
+with open('key', 'r') as _:
+    WIKI_KEY = _.read().strip()
+
 
 def search_pubmed(keyword: str, retmax: int = 5) -> list:
     """
@@ -55,11 +60,15 @@ def search_pubmed(keyword: str, retmax: int = 5) -> list:
 async def search_gbif(name: str) -> dict:
     name = name.capitalize()
     species_info = {}
+    key_list =  ('kingdom', 'phylum', 'order', 'family', 'genus',
+                 'scientificName', 'publishedIn', 'descriptions', 'image')
+    for key in key_list:
+        species_info[key] = ''
     base_url = 'https://api.gbif.org/v1/species'
     headers = {'accept': 'application/json'}
     search_url = f'{base_url}/search'
     search_params = {'datasetKey': 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c',
-                     'isExtinct': False,
+                     'isExtinct': 'false',
                      'q': name,
                      'limit': 1}
     image_params = {'limit': 1}
@@ -69,18 +78,21 @@ async def search_gbif(name: str) -> dict:
             if len(search_result['results']) == 0:
                 return species_info
             # may get wrong result
-            elif not search_result['results'][0]['scientificName'].startswith(name):
+            result = search_result['results'][0]
+            if not result['scientificName'].startswith(name):
                 print('bad search result')
                 return species_info
-        for key in ('kingdom', 'phylum', 'order', 'family', 'genus',
-                    'scientificName', 'publishedIn', 'descriptions'):
-            species_info[key] = search_result['results'][0][key]
+            for key in key_list:
+                species_info[key] = result.get(key, '')
+            if 'descriptions' in result and len(result['descriptions']) != 0:
+                species_info['descriptions'] = result['descriptions'][0]['description']
         usage_key = search_result['results'][0]['key']
         image_url = f'{base_url}/{usage_key}/media'
         async with session.get(image_url, params=image_params, headers=headers) as resp:
             search_result2 = await resp.json()
-            image = search_result2['results'][0]['identifier']
-            species_info['image'] = image
+            if len(search_result2['results']) != 0:
+                image = search_result2['results'][0]['identifier']
+                species_info['image'] = image
     return species_info
 
 
@@ -99,13 +111,73 @@ async def pubmed_search():
     keyword = request.args.get('keyword')
     retmax = int(request.args.get('retmax'))
     records = await asyncio.to_thread(search_pubmed, keyword, retmax)
-    records = search_pubmed(keyword, retmax)
     return jsonify(records)
 
 
 @app.get('/gbif/search')
 async def gbif_search() -> dict:
-    species = request.args.get('species')
+    species = request.args.get('name')
     record = await search_gbif(species)
     return jsonify(record)
 
+
+@app.get('/gbif/map/<string:tax_id>')
+async def gbif_map(tax_id: str):
+    base_url = 'https://api.gbif.org/v2/map/occurrence/density'
+    # fixed options
+    parameters = (f'/0/0/0%401x.png?srs=EPSG%3A4326'
+                  '&style=greenHeat.point&taxonKey={tax_id}')
+    return await app.redirect(base_url+parameters)
+
+
+@functools.lru_cache(maxsize=1024)
+@app.get('/wiki/image/<string:name>')
+async def wiki_image(name: str):
+    base_url = 'https://api.wikimedia.org/core/v1'
+    headers = {'Authorization': f'Bearer {WIKI_KEY}', 
+               'User-Agent': 'test (wp)'}
+    filename = 'File:The_Blue_Marble.jpg'
+    file_url = f'{base_url}/commons/file/{filename}'
+    async with aiohttp.ClientSession() as session:
+        async with session.get(file_url, headers=headers) as resp:
+            img = await resp.content
+            img_type = await resp.content_type
+            img_file = io.BytesIO(img)
+            img_file.seek(0)
+    return send_file(img_file, mimetype=img_type)
+
+
+@functools.lru_cache(maxsize=1024)
+@app.get('/wiki/page/<string:name>')
+async def wiki_page(name: str):
+    base_url = 'https://api.wikimedia.org/core/v1'
+    headers = {'Authorization': f'Bearer {WIKI_KEY}', 
+               'User-Agent': 'test (wp)'}
+    en_url = f'{base_url}/wikipedia/en/search/title'
+    parameters = {'q': name, 'limit': 1}
+    # parameters2 = {'content_model': 'plaintext'}
+    parameters2 = {'prop': 'extracts', 'exlimit': 'max', 'explaintext': 'true',
+                   'action': 'query', 'format': 'json'}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(en_url, headers=headers, params=parameters) as resp:
+            search_result = await resp.json()
+            if len(search_result.get('pages', [])) != 0:
+                page_title = search_result['pages'][0]['title']
+                page_id = search_result['pages'][0]['id']
+                parameters2['titles'] = page_title
+                # new api do not support content model
+                page_url = f'https://en.wikipedia.org/w/api.php'
+            else:
+                return ''
+        async with session.get(page_url, headers=headers, params=parameters2) as resp2:
+            page = await resp2.json()
+            # page_source = page['source']
+            page_text = page['query']['pages'][str(page_id)]['extract']
+            return page_text
+
+
+
+@app.get('/species/info')
+async def species_info() -> dict:
+    llm_url = 'http://1.14.109.84:8188/v1'
+    pass

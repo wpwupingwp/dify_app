@@ -5,7 +5,7 @@ description = "Default template for PDM package"
 authors = [
     {name = "wp", email = "wpwupingwp@outlook.com"},
 ]
-dependencies = ['biopython', 'quart', 'uvicorn']
+dependencies = ['biopython', 'quart', 'uvicorn', 'aiohttp']
 requires-python = "==3.11.*"
 readme = "README.md"
 license = {text = "AGPL-3"}
