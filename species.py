@@ -3,7 +3,7 @@ import functools
 import io
 
 from Bio import Entrez, Medline
-from quart import Quart, request, jsonify, send_file
+from quart import Quart, request, jsonify, send_file, abort
 import aiohttp
 import asyncio
 
@@ -134,17 +134,26 @@ async def gbif_map(tax_id: str):
 @app.get('/wiki/image/<string:name>')
 async def wiki_image(name: str):
     base_url = 'https://api.wikimedia.org/core/v1'
-    headers = {'Authorization': f'Bearer {WIKI_KEY}', 
-               'User-Agent': 'test (wp)'}
-    filename = 'File:The_Blue_Marble.jpg'
-    file_url = f'{base_url}/commons/file/{filename}'
+    query_url = f'https://en.wikipedia.org/w/api.php'
+    parameters = dict(titles=name, action='query', format='json', prop='images')
+    headers = {'Authorization': f'Bearer {WIKI_KEY}', 'User-Agent': 'test (wp)'}
     async with aiohttp.ClientSession() as session:
-        async with session.get(file_url, headers=headers) as resp:
-            img = await resp.content
-            img_type = await resp.content_type
+        async with session.get(query_url, headers=headers, params=parameters) as resp:
+            search_result = await resp.json()
+            if len(search_result['query']['pages']) != 0:
+                img_title = search_result['query']['pages'].popitem()[1]['images'][0]['title']
+                img_info_url = f'{base_url}/commons/file/{img_title}'
+            else:
+                return abort(404, 'No image found.')
+        async with session.get(img_info_url, headers=headers) as resp:
+            img_info = await resp.json()
+            img_url = img_info['preferred']['url']
+        async with session.get(img_url, headers=headers) as resp:
+            img = await resp.content.read()
+            img_type = resp.content_type
             img_file = io.BytesIO(img)
             img_file.seek(0)
-    return send_file(img_file, mimetype=img_type)
+    return await send_file(img_file, mimetype=img_type)
 
 
 @functools.lru_cache(maxsize=1024)
