@@ -15,7 +15,8 @@ for i in range(1,10):
     img_file = f'/tmp/a/test/{i}.jpg'
     img = torchvision.io.read_image(img_file).unsqueeze(0)
 #    img = torch.randint(255,(2,3,224,224)).float()
-    s = m(torch.tensor(img))
+    s = m(img)
+    #s = m(torch.tensor(img))
     values = [f'{i.item():.2f}' for i in s.values()]
     print(img_file, values)
 b = timer()
