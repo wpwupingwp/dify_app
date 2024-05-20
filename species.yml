@@ -1,0 +1,876 @@
+app:
+  description: ''
+  icon: herb
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: species intro
+workflow:
+  features:
+    file_upload:
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: llm
+      id: 1714988719193-1714988813846
+      source: '1714988719193'
+      sourceHandle: source
+      target: '1714988813846'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: code
+      id: 1714988813846-1715263525817
+      source: '1714988813846'
+      sourceHandle: source
+      target: '1715263525817'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: llm
+      id: 1716186907572-1715265523530
+      source: '1716186907572'
+      sourceHandle: source
+      target: '1715265523530'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: code
+      id: 1716187398426-1716187812135
+      source: '1716187398426'
+      sourceHandle: source
+      target: '1716187812135'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: 1715263525817-1716190518409
+      source: '1715263525817'
+      sourceHandle: source
+      target: '1716190518409'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: http-request
+      id: 1716190518409-1715262450092
+      source: '1716190518409'
+      sourceHandle: source
+      target: '1715262450092'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: 1715244065546-1716190617621
+      source: '1715244065546'
+      sourceHandle: source
+      target: '1716190617621'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: http-request
+      id: 1716190617621-1716186907572
+      source: '1716190617621'
+      sourceHandle: source
+      target: '1716186907572'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: answer
+      id: 1715262450092-1716190637465
+      source: '1715262450092'
+      sourceHandle: source
+      target: '1716190637465'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: llm
+      id: 1716190637465-1715244065546
+      source: '1716190637465'
+      sourceHandle: source
+      target: '1715244065546'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: 1715265523530-1716190708584
+      source: '1715265523530'
+      sourceHandle: source
+      target: '1716190708584'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: http-request
+      id: 1716190708584-1716187398426
+      source: '1716190708584'
+      sourceHandle: source
+      target: '1716187398426'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: 1716187812135-1716191527587
+      source: '1716187812135'
+      sourceHandle: source
+      target: '1716191527587'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: template-transform
+        targetType: answer
+      id: 1715266188455-1716191562239
+      source: '1715266188455'
+      sourceHandle: source
+      target: '1716191562239'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: end
+      id: 1716191562239-1715266357248
+      source: '1716191562239'
+      sourceHandle: source
+      target: '1715266357248'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: answer
+      id: 1716191950565-1716192166996
+      selected: false
+      source: '1716191950565'
+      sourceHandle: source
+      target: '1716192166996'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: answer
+      id: 1716192376465-1716192558591
+      source: '1716192376465'
+      sourceHandle: source
+      target: '1716192558591'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: template-transform
+      id: 1716192558591-1715266188455
+      source: '1716192558591'
+      sourceHandle: source
+      target: '1715266188455'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: answer
+        targetType: if-else
+      id: 1716191527587-1716193030309
+      source: '1716191527587'
+      sourceHandle: source
+      target: '1716193030309'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: http-request
+      id: 1716193030309-1716191950565
+      source: '1716193030309'
+      sourceHandle: 'true'
+      target: '1716191950565'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: http-request
+      id: 1716193030309-1716192376465
+      source: '1716193030309'
+      sourceHandle: 'false'
+      target: '1716192376465'
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: "\u5F00\u59CB"
+        type: start
+        variables: []
+      height: 54
+      id: '1714988719193'
+      position:
+        x: 275.7306608388444
+        y: -498.39405427173597
+      positionAbsolute:
+        x: 275.7306608388444
+        y: -498.39405427173597
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - sys
+          - query
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: llama3
+          provider: openai_api_compatible
+        prompt_template:
+        - id: a6898474-f632-4515-8d74-f56e416ab0db
+          role: system
+          text: 'you are a python function.first, you translate given text to english.
+            then, from english text extract or summarize  no more than 3 keywords
+            . if the keywords include a species or taxonomy name, also extract it.
+            The return format is json and keys are ''keywords'' and ''taxon''. do
+            not generate any extra hints, comments. if context is empty just return
+            empty value json. here is context
+
+            <context>{{#context#}}</context>. run the function and return the value.
+            do not return python code
+
+
+
+            /
+
+
+
+
+
+            '
+        selected: false
+        title: LLM
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1714988813846'
+      position:
+        x: 304.81213467418456
+        y: -180.45783135928497
+      positionAbsolute:
+        x: 304.81213467418456
+        y: -180.45783135928497
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: pubmed result
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: llama3
+          provider: openai_api_compatible
+        prompt_template:
+        - id: ef5475cd-aa6b-4924-bf56-d25c01b7f32e
+          role: system
+          text: "\u6839\u636E\u6240\u7ED9\u6587\u732E\uFF0C\u603B\u7ED3\u4E00\u4E0B\
+            \u8FD1\u671F<keyword>\n  {{#1715263525817.keywords#}}\n\n</keyword>\u76F8\
+            \u5173\u7684\u7814\u7A76\u8FDB\u5C55\uFF0C\u5E76\u63D0\u70BC\u51FA\u8FD1\
+            \u671F\u7684\u7814\u7A76\u65B9\u5411\u3002\u5FC5\u987B\u4F7F\u7528\u4E2D\
+            \u6587\u56DE\u7B54\uFF0C\u5E76\u5728\u56DE\u7B54\u672B\u5C3E\u7ED9\u51FA\
+            \u53C2\u8003\u6587\u732E\u5217\u8868\u3002\u4EE5\u4E0B\u662F\u6587\u732E\
+            \u4FE1\u606F:<papers>\n{{#1715262450092.body#}}\n</papers>//"
+        selected: false
+        title: LLM 2
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 128
+      id: '1715244065546'
+      position:
+        x: 2007.9904158990432
+        y: -571.7188936458437
+      positionAbsolute:
+        x: 2007.9904158990432
+        y: -571.7188936458437
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: ''
+          type: none
+        desc: ''
+        headers: ''
+        method: get
+        params: retmax:5
+        selected: false
+        timeout:
+          connect: 10
+          max_connect_timeout: 300
+          max_read_timeout: 600
+          max_write_timeout: 600
+          read: 60
+          write: 20
+        title: search pubmed
+        type: http-request
+        url: http://1.14.109.84:2024/pubmed/search/{{#1715263525817.keywords#}}
+        variables: []
+      height: 125
+      id: '1715262450092'
+      position:
+        x: 1370.6953644203834
+        y: -579.7565083516761
+      positionAbsolute:
+        x: 1370.6953644203834
+        y: -579.7565083516761
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "def main(json_: dict) -> (str, str):\n    import json\n    j = json.loads(json_)\n\
+          \    keywords_ = ' AND '.join(j['keywords'])\n    keywords = f'{keywords_}\
+          \ AND (\"2023/01/01\"[PDAT] : \"2024/12/31\"[PDAT])'\n    taxon = ''.join(j['taxon'])\n\
+          \    return {'keywords': keywords,\n    'taxon': taxon}\n   "
+        code_language: python3
+        desc: ''
+        outputs:
+          keywords:
+            children: null
+            type: string
+          taxon:
+            children: null
+            type: string
+        selected: false
+        title: "\u4EE3\u7801\u6267\u884C"
+        type: code
+        variables:
+        - value_selector:
+          - '1714988813846'
+          - text
+          variable: json_
+      height: 54
+      id: '1715263525817'
+      position:
+        x: 689.8834354976912
+        y: -164.07709740208844
+      positionAbsolute:
+        x: 689.8834354976912
+        y: -164.07709740208844
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1716186907572'
+          - body
+        desc: species info from foc
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: llama3
+          provider: openai_api_compatible
+        prompt_template:
+        - id: be5cce20-5044-456b-8833-1f16a69ad783
+          role: system
+          text: "\u5C06\u6240\u7ED9\u5185\u5BB9\u7FFB\u8BD1\u4E3A\u4E2D\u6587\uFF0C\
+            \u5E76\u6DA6\u8272\u4E3A\u767E\u79D1\u8BCD\u6761\u5F62\u5F0F\u3002\u4EE5\
+            \u4E0B\u662F\u6240\u7ED9\u5185\u5BB9\uFF1A\n{{#context#}}"
+        - id: bf47ed91-af9b-4617-aee2-452d2e7aab12
+          role: user
+          text: ''
+        selected: false
+        title: LLM 3
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 128
+      id: '1715265523530'
+      position:
+        x: 1711.947444943607
+        y: -379.66017813765893
+      positionAbsolute:
+        x: 1711.947444943607
+        y: -379.66017813765893
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        template: "<h1> {{ keywords }} </h1>\r\n<h2 {{ taxon }} </h2>\r\n<h3> \u7C7B\
+          \u7FA4\u7B80\u4ECB </h3>\r\n\r\n{% for key, value in gbif.items() %}\r\n\
+          {{ loop.index }}/{{ loop.length }}. {{ key }}: {{ value }}\r\n{% endfor\
+          \ %}\r\n\r\n</br>\r\n{{ intro }}\r\n<h3> \u76F8\u5173\u8FD1\u671F\u6587\u732E\
+          \ </h3>\r\n{{ paper }}"
+        title: "\u6A21\u677F\u8F6C\u6362"
+        type: template-transform
+        variables:
+        - value_selector:
+          - '1715263525817'
+          - keywords
+          variable: keywords
+        - value_selector:
+          - '1715263525817'
+          - taxon
+          variable: taxon
+        - value_selector:
+          - '1715265523530'
+          - text
+          variable: intro
+        - value_selector:
+          - '1715244065546'
+          - text
+          variable: paper
+        - value_selector:
+          - '1716187812135'
+          - gbif_record
+          variable: gbif
+      height: 54
+      id: '1715266188455'
+      position:
+        x: 2885.2464823369
+        y: -223.33632537297933
+      positionAbsolute:
+        x: 2885.2464823369
+        y: -223.33632537297933
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        outputs: []
+        selected: false
+        title: "\u7ED3\u675F"
+        type: end
+      height: 54
+      id: '1715266357248'
+      position:
+        x: 3620.938639241879
+        y: -218.6529467245912
+      positionAbsolute:
+        x: 3620.938639241879
+        y: -218.6529467245912
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: ''
+          type: none
+        desc: ''
+        headers: ''
+        method: get
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: search wiki
+        type: http-request
+        url: http://1.14.109.84:2024/wiki/page/{{#1715263525817.taxon#}}
+        variables: []
+      height: 109
+      id: '1716186907572'
+      position:
+        x: 1403.5413328784905
+        y: -353.45100380614446
+      positionAbsolute:
+        x: 1403.5413328784905
+        y: -353.45100380614446
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: ''
+          type: none
+        desc: ''
+        headers: ''
+        method: get
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: search  gbif
+        type: http-request
+        url: http://1.14.109.84:2024/gbif/search/{{#1715263525817.taxon#}}
+        variables: []
+      height: 109
+      id: '1716187398426'
+      position:
+        x: 1389.4118775232096
+        y: -147.47438436641863
+      positionAbsolute:
+        x: 1389.4118775232096
+        y: -147.47438436641863
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "def main(arg1: string) -> dict:\n    import json\n    gbif_record =\
+          \ json.loads(arg1)\n    return {\n        \"gbif_record\": gbif_record,\n\
+          \        \"gbif_image\": gbif_record['image']\n    }"
+        code_language: python3
+        dependencies: []
+        desc: ''
+        outputs:
+          gbif_image:
+            children: null
+            type: string
+          gbif_record:
+            children: null
+            type: object
+        selected: false
+        title: "\u4EE3\u7801\u6267\u884C 2"
+        type: code
+        variables:
+        - value_selector:
+          - '1716187398426'
+          - body
+          variable: arg1
+      height: 54
+      id: '1716187812135'
+      position:
+        x: 1711.947444943607
+        y: -129.41602894593046
+      positionAbsolute:
+        x: 1711.947444943607
+        y: -129.41602894593046
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "\u4ECE\u60A8\u6240\u7ED9\u8F93\u5165\u4E2D\uFF0C\u63D0\u53D6\u5230\
+          \u7684\u641C\u7D22\u5173\u952E\u8BCD\uFF1A{{#1715263525817.keywords#}}\n\
+          \u63D0\u53D6\u5230\u7684\u7C7B\u7FA4\u540D\u79F0\uFF1A{{#1715263525817.taxon#}}\n\
+          \u6B63\u5728\u68C0\u7D22PubMed\u6570\u636E\u5E93\u2026\u2026"
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D"
+        type: answer
+        variables: []
+      height: 173
+      id: '1716190518409'
+      position:
+        x: 1090.3522451690194
+        y: -399.56843482251406
+      positionAbsolute:
+        x: 1090.3522451690194
+        y: -399.56843482251406
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "\u4EE5\u4E0B\u662F\u68C0\u7D22\u5230\u7684\u76F8\u5173\u8BBA\u6587\
+          \u4FE1\u606F\uFF1A\n{{#1715244065546.text#}}\n\u6B63\u5728\u68C0\u7D22\u767E\
+          \u79D1\u6761\u76EE\u2026\u2026"
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 2"
+        type: answer
+        variables: []
+      height: 139
+      id: '1716190617621'
+      position:
+        x: 2314.0775723153156
+        y: -555.338159688647
+      positionAbsolute:
+        x: 2314.0775723153156
+        y: -555.338159688647
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "\u6B63\u5728\u751F\u6210\u76F8\u5173\u8BBA\u6587\u6458\u8981\u2026\
+          \u2026"
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 3"
+        type: answer
+        variables: []
+      height: 104
+      id: '1716190637465'
+      position:
+        x: 1700.6954617546876
+        y: -579.7565083516761
+      positionAbsolute:
+        x: 1700.6954617546876
+        y: -579.7565083516761
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "\u4EE5\u4E0B\u662F\u68C0\u7D22\u5230\u7684\u767E\u79D1\u4FE1\u606F\
+          \uFF1A\n{{#1715265523530.text#}}\n\u68C0\u7D22GBIF\u76F8\u5173\u4FE1\u606F\
+          \u2026\u2026"
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 4"
+        type: answer
+        variables: []
+      height: 139
+      id: '1716190708584'
+      position:
+        x: 2021.4756396876926
+        y: -379.66017813765893
+      positionAbsolute:
+        x: 2021.4756396876926
+        y: -379.66017813765893
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "\u4EE5\u4E0B\u662F\u4ECEgbif\u68C0\u7D22\u5230\u7684\u76F8\u5173\u4FE1\
+          \u606F\uFF1A\n{{#1716187812135.gbif_record#}}\n"
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 5"
+        type: answer
+        variables: []
+      height: 123
+      id: '1716191527587'
+      position:
+        x: 2038.3149201568908
+        y: -152.47090178667833
+      positionAbsolute:
+        x: 2038.3149201568908
+        y: -152.47090178667833
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "\u603B\u7ED3\uFF1A\n{{#1715266188455.output#}}"
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 6"
+        type: answer
+        variables: []
+      height: 107
+      id: '1716191562239'
+      position:
+        x: 3266.462145096613
+        y: -223.33632537297933
+      positionAbsolute:
+        x: 3266.462145096613
+        y: -223.33632537297933
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: ''
+          type: none
+        desc: ''
+        headers: ''
+        method: get
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: "HTTP \u8BF7\u6C42 4"
+        type: http-request
+        url: '{{#1716187812135.gbif_image#}}'
+        variables: []
+      height: 93
+      id: '1716191950565'
+      position:
+        x: 1470.250713696716
+        y: 158.3832560097511
+      positionAbsolute:
+        x: 1470.250713696716
+        y: 158.3832560097511
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: 'gbif image:
+
+          {{#1716191950565.files#}}'
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 8"
+        type: answer
+        variables: []
+      height: 107
+      id: '1716192166996'
+      position:
+        x: 1844.5609334632416
+        y: 134.31370140681793
+      positionAbsolute:
+        x: 1844.5609334632416
+        y: 134.31370140681793
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: ''
+          type: none
+        desc: ''
+        headers: ''
+        method: get
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: "HTTP \u8BF7\u6C42 5"
+        type: http-request
+        url: http://1.14.109.84:2024/wiki/image/{{#1715263525817.taxon#}}
+        variables: []
+      height: 109
+      id: '1716192376465'
+      position:
+        x: 2206.867656269676
+        y: 122.47098528828155
+      positionAbsolute:
+        x: 2206.867656269676
+        y: 122.47098528828155
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1716192376465.files#}}'
+        desc: ''
+        selected: false
+        title: "\u76F4\u63A5\u56DE\u590D 8"
+        type: answer
+        variables: []
+      height: 107
+      id: '1716192558591'
+      position:
+        x: 2170.751418188129
+        y: 383.0107398960809
+      positionAbsolute:
+        x: 2170.751418188129
+        y: 383.0107398960809
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        conditions:
+        - comparison_operator: not empty
+          id: '1716193031494'
+          value: ''
+          variable_selector:
+          - '1716187812135'
+          - gbif_image
+        desc: ''
+        logical_operator: and
+        selected: false
+        title: "\u6761\u4EF6\u5206\u652F"
+        type: if-else
+      height: 126
+      id: '1716193030309'
+      position:
+        x: 2338.314920156891
+        y: -152.47090178667833
+      positionAbsolute:
+        x: 2338.314920156891
+        y: -152.47090178667833
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: -198.38221393830736
+      y: 516.3171659033186
+      zoom: 0.4117955086337867
