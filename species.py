@@ -58,7 +58,7 @@ def search_pubmed(keyword: str, retmax: int = 5) -> list:
 
 
 async def search_gbif(name: str) -> dict:
-    name = name.capitalize()
+    name = name.capitalize().replace('+', ' ')
     species_info = {}
     key_list =  ('kingdom', 'phylum', 'order', 'family', 'genus',
                  'scientificName', 'publishedIn', 'descriptions', 'image')
@@ -96,27 +96,25 @@ async def search_gbif(name: str) -> dict:
     return species_info
 
 
-@app.get('/pubmed/search')
-async def pubmed_search():
+@app.get('/pubmed/search/<string:keyword>')
+async def pubmed_search(keyword: str, retmax=5):
     """
     Search PubMed using the provided keyword.
 
     Args:
         keyword (str): The search keyword.
-        retmax (int, optional): The maximum number of results to return. Defaults to 10.
+        retmax (int, optional): The maximum number of results to return. Defaults to 5
 
     Returns:
         JSONResponse: A JSON response containing the search results.
     """
-    keyword = request.args.get('keyword')
-    retmax = int(request.args.get('retmax'))
+    retmax = max(int(request.args.get('retmax')), retmax)
     records = await asyncio.to_thread(search_pubmed, keyword, retmax)
     return jsonify(records)
 
 
-@app.get('/gbif/search')
-async def gbif_search() -> dict:
-    species = request.args.get('name')
+@app.get('/gbif/search/<string:species>')
+async def gbif_search(species) -> dict:
     record = await search_gbif(species)
     return jsonify(record)
 
@@ -141,7 +139,10 @@ async def wiki_image(name: str):
         async with session.get(query_url, headers=headers, params=parameters) as resp:
             search_result = await resp.json()
             if len(search_result['query']['pages']) != 0:
-                img_title = search_result['query']['pages'].popitem()[1]['images'][0]['title']
+                record = search_result['query']['pages'].popitem()[1]
+                if 'images' not in record:
+                    return abort(404, 'No image found.')
+                img_title = record['images'][0]['title']
                 img_info_url = f'{base_url}/commons/file/{img_title}'
             else:
                 return abort(404, 'No image found.')
