@@ -27,22 +27,16 @@ m = clip_iqa(prompts=prompts,
 log.info('Model loaded')
 log.info(f'Prompts:{prompts}')
 
-result = list()
+out = open('result.txt', 'w')
+out.write(str(prompts)+'\n')
 for img_file in scan_files():
     # unsqueeze to 4-d tensor 
     # img = torch.randint(255,(2,3,224,224)).float()
-    img = torchvision.io.read_image(img_file).unsqueeze(0)
+    img = torchvision.io.read_image(img_file).unsqueeze(0).to('cuda')
     s = m(img)
     #s = m(torch.tensor(img))
-    values = [f'{i.item():.2f}' for i in s.values()]
+    values = ','.join([f'{i.item():.2f}' for i in s.values()])
     log.info(f'{img_file.stem}, {values}')
-    result.append((img_file, *values))
-with open('result.txt', 'w') as out:
-    out.write(','.join(prompts))
-    for i in result:
-        name = i[0]
-        values = i[1:]
-        v = ','.join([f'{j:.2f}' for j in values])
-        out.write(f'{name},{v}\n')
+    out.write(f'{img_file},{values}\n')
 log.info('Done')
 
