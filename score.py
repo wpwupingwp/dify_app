@@ -1,13 +1,16 @@
 from timeit import default_timer as timer
-a = timer()
 from torchmetrics.multimodal import CLIPImageQualityAssessment as clip_iqa
+
 import torch
 import torchvision
 
+a = timer()
 prompts=('quality', 'noisiness', 'sharpness','natural','complexity', 
          ('plant photo','not plant photo'), 
          ('flower photo', 'not flower photo'))
-m = clip_iqa(prompts=prompts, model_name_or_path='openai/clip-vit-base-patch32')
+# m = clip_iqa(prompts=prompts, model_name_or_path='openai/clip-vit-base-patch32')
+m = clip_iqa(prompts=prompts,
+             model_name_or_path='openai/clip-vit-large-patch14')
 print('load modules', timer()-a)
 print(prompts)
 a = timer()
