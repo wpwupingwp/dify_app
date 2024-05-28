@@ -20,7 +20,7 @@ prompts = (('Good photo.', 'Bad photo.'),
 
 # prompts = ('quality', 'brightness', 'noisiness', 'colorfullness', 'sharpness', 'contrast', 'complexity', 'natural', 'beautiful')
 input_folder = Path('/tmp/a')
-input_folder = Path('/media/ping/Data/Work/pics')
+# input_folder = Path('/media/ping/Data/Work/pics')
 output_file = open('result.txt', 'w')
 output_folder = Path('/tmp/out')
 
@@ -52,8 +52,10 @@ def analyze(img_score: list, output_folder: Path):
         if count > 9:
             continue
         p = Path(img)
+        if not p.exists():
+            log.warning(f'Cannot find {p}')
         new_name = output_folder / (s1+'-'+p.name)
-        copy(img, new_name)
+        copy(p, new_name)
         count += 1
 
 
@@ -71,6 +73,7 @@ def main():
     else:
         log.warning('Clean old output')
         rmtree(output_folder)
+        output_folder.mkdir()
     log.info(f'Output folder {output_folder}')
 
     log.info('Analyzing')
