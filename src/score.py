@@ -7,34 +7,41 @@ import torchvision
 
 model = 'openai/clip-vit-base-patch32'
 # model = 'openai/clip-vit-large-patch14'
-prompts = [('Good photo.', 'Bad photo.'),
+model = 'clip_iqa'
+prompts = (('Aesthetic photo.', 'Not aesthetic photo.'),
+           ('Natural photo.', 'Synthetic photo.'),
+           ('New photo.', 'Old photo'),
            ('Complex photo.', 'Simple photo.'),
-           ('Beautiful photo.', 'Ugly photo.')
-           ('Aesthetic photo.', 'Not aesthetic photo.'),
-           ('Plant photo.', 'not plant photo.') ]
+           ('Good photo.', 'Bad photo.'))
+prompts = ('quality', 'brightness', 'noisiness', 'colorfullness', 'sharpness',
+           'contrast', 'complexity', 'natural', 'beautiful')
+# input_folder = Path('/media/ping/Data/Work/pics')
+input_folder = Path('/tmp/a')
 output_file = open('result.txt', 'w')
 output_folder = Path('/tmp/out')
 
-def scan_files(workdir=None) -> Path:
+def scan_files(folder: Path) -> Path:
     count = 0
     PAUSE = 100
-    if workdir is None:
-        workdir = '/media/ping/Data/Work/pics'
-    for folder in Path(workdir).glob('*'):
-        for img in folder.glob('*'):
-            if img.suffix in {'.jpg', '.png', '.jpeg'}:
-                yield img
-                count += 1
-                if count > PAUSE:
-                    pass
+    for img in folder.glob('*'):
+        if img.suffix in {'.jpg', '.png', '.jpeg'}:
+            yield img
+            count += 1
+            if count > PAUSE:
+                pass
 
 
 def analyze(img_score: list, output_folder: Path):
-    img_score.sort(key=lambda x:float(x[1][0]))
+    # prompt index
+    index = 0
+    print(img_score[0])
+    # name, [value1, value2, ...]
+    img_score.sort(key=lambda x: x[1][index])
     last_score = 'x'
     count = 0
     for r in img_score:
-        img, score, *_ = r
+        img, scores = r
+        score = scores[index]
         s1 = str(score)[2]
         if s1 != last_score:
             count = 0
@@ -42,15 +49,16 @@ def analyze(img_score: list, output_folder: Path):
         if count > 9:
             continue
         p = Path(img)
-        copy(img, output_folder/(s1+'-'+p.name))
+        new_name = output_folder / (s1+'-'+p.name)
+        copy(img, new_name)
         count += 1
         log.info(r)
 
 
 def main():
-    log.add('iqa_{time}.log')
+    # log.add('iqa_{time}.log')
     log.info('Start')
-    m = clip_iqa(prompts=prompts, model_name_or_path=model).to('cuda')
+    m = clip_iqa(prompts=prompts, model_name_or_path=model, data_range=255).to('cuda')
     log.info('Model loaded')
     log.info(f'Prompts:{prompts}')
 
@@ -64,13 +72,14 @@ def main():
 
     log.info('Analyzing')
     img_score = list()
-    for n, img_file in enumerate(scan_files()):
+    for n, img_file in enumerate(scan_files(input_folder)):
         log.info(f'{n} {img_file}')
         # unsqueeze to 4-d tensor 
         img = torchvision.io.read_image(img_file).unsqueeze(0).to('cuda')
         s = m(img)
-        values = s.values()
-        values_str = ','.join([f'{i.item():.2f}' for i in values])
+        log.info(f'{img_file} {s}')
+        values = [i.item() for i in s.values()]
+        values_str = ','.join([f'{i:.2f}' for i in values])
         output_file.write(f'{img_file},{values_str}\n')
 
         img_score.append((img_file, values))
