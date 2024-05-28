@@ -5,18 +5,22 @@ from shutil import copy, rmtree
 
 import torchvision
 
-model = 'openai/clip-vit-base-patch32'
-# model = 'openai/clip-vit-large-patch14'
-model = 'clip_iqa'
-prompts = (('Aesthetic photo.', 'Not aesthetic photo.'),
+# model = 'openai/clip-vit-base-patch32'
+model = 'openai/clip-vit-large-patch14'
+data_range = 1.0
+# clip_iqa use 0-255, clip use 0-1.0
+# data_range = 255
+# model = 'clip_iqa'
+prompts = (('Good photo.', 'Bad photo.'), 
+           ('Aesthetic photo.', 'Not aesthetic photo.'),
            ('Natural photo.', 'Synthetic photo.'),
-           ('New photo.', 'Old photo'),
-           ('Complex photo.', 'Simple photo.'),
-           ('Good photo.', 'Bad photo.'))
-prompts = ('quality', 'brightness', 'noisiness', 'colorfullness', 'sharpness',
-           'contrast', 'complexity', 'natural', 'beautiful')
-# input_folder = Path('/media/ping/Data/Work/pics')
+           ('Plant photo', 'Not plant photo'),
+           ('Flower photo', 'Not flower photo'),
+           ('Leaf photo', 'Not leaf photo'))
+
+# prompts = ('quality', 'brightness', 'noisiness', 'colorfullness', 'sharpness', 'contrast', 'complexity', 'natural', 'beautiful')
 input_folder = Path('/tmp/a')
+input_folder = Path('/media/ping/Data/Work/pics')
 output_file = open('result.txt', 'w')
 output_folder = Path('/tmp/out')
 
@@ -34,7 +38,6 @@ def scan_files(folder: Path) -> Path:
 def analyze(img_score: list, output_folder: Path):
     # prompt index
     index = 0
-    print(img_score[0])
     # name, [value1, value2, ...]
     img_score.sort(key=lambda x: x[1][index])
     last_score = 'x'
@@ -52,13 +55,13 @@ def analyze(img_score: list, output_folder: Path):
         new_name = output_folder / (s1+'-'+p.name)
         copy(img, new_name)
         count += 1
-        log.info(r)
 
 
 def main():
     # log.add('iqa_{time}.log')
     log.info('Start')
-    m = clip_iqa(prompts=prompts, model_name_or_path=model, data_range=255).to('cuda')
+    m = clip_iqa(prompts=prompts, model_name_or_path=model,).to('cuda')
+    # m = clip_iqa(prompts=prompts, model_name_or_path=model, data_range=255).to('cuda')
     log.info('Model loaded')
     log.info(f'Prompts:{prompts}')
 
@@ -77,7 +80,6 @@ def main():
         # unsqueeze to 4-d tensor 
         img = torchvision.io.read_image(img_file).unsqueeze(0).to('cuda')
         s = m(img)
-        log.info(f'{img_file} {s}')
         values = [i.item() for i in s.values()]
         values_str = ','.join([f'{i:.2f}' for i in values])
         output_file.write(f'{img_file},{values_str}\n')
