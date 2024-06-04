@@ -3,15 +3,19 @@ name = "dify_app"
 version = "0.1.0"
 description = "LLM apps for plant"
 authors = [
-    {name = "wp", email = "wpwupingwp@outlook.com"},
+    { name = "wp", email = "wpwupingwp@outlook.com" },
 ]
-dependencies = ['biopython', 'quart', 'uvicorn', 'aiohttp', 'torchmetrics',
-'torch']
-requires-python = "==3.11.*"
+dependencies = ['biopython', 'quart', 'uvicorn', 'aiohttp',
+    'torchmetrics', 'torch',
+    'selenium', 'beautifulsoup4', 'certifi', 'urllib3',
+    'loguru'
+]
+requires-python = ">=3.11.*"
 readme = "README.md"
-license = {text = "AGPL-3"}
+license = { text = "AGPL-3" }
 
 [tool.pdm]
 distribution = false
 [project.script]
-test = 'uvicorn pubmed:app --port 2024'
+llm_server = 'uvicorn pubmed:app --port 2024'
+crawler = 'python src/crawler.py'

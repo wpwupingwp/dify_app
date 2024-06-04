@@ -9,7 +9,7 @@ import asyncio
 
 
 app = Quart(__name__)
-with open('key', 'r') as _:
+with open('config.py', 'r') as _:
     WIKI_KEY = _.read().strip()
 
 
@@ -24,7 +24,7 @@ def search_pubmed(keyword: str, retmax: int = 5) -> list:
     Returns:
         list: A list of JSONified records.
     """
-    # Set API key and email (required for NCBI Entrez API)
+    # Set API config.py and email (required for NCBI Entrez API)
     # Entrez.api_key = "YOUR_API_KEY"
     Entrez.email = "wpwupingwp@outlook.com"
 
@@ -86,7 +86,7 @@ async def search_gbif(name: str) -> dict:
                 species_info[key] = result.get(key, '')
             if 'descriptions' in result and len(result['descriptions']) != 0:
                 species_info['descriptions'] = result['descriptions'][0]['description']
-        usage_key = search_result['results'][0]['key']
+        usage_key = search_result['results'][0]['config.py']
         image_url = f'{base_url}/{usage_key}/media'
         async with session.get(image_url, params=image_params, headers=headers) as resp:
             search_result2 = await resp.json()
