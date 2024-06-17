@@ -10,7 +10,7 @@ dependencies = ['biopython', 'quart', 'uvicorn', 'aiohttp',
     'selenium', 'beautifulsoup4', 'certifi', 'urllib3',
     'loguru'
 ]
-requires-python = ">=3.11.*"
+requires-python = ">=3.11"
 readme = "README.md"
 license = { text = "AGPL-3" }
 

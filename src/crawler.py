@@ -1,12 +1,12 @@
 import json
 import csv
 
+from loguru import logger as log
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import logoru
 
 from config import profile_path
 
@@ -27,7 +27,6 @@ def get_species_list(list_file='species_list.csv') -> list:
         reader = csv.reader(f)
         next(reader)
         data = list(reader)
-        print(data)
         return data
 
 
@@ -40,18 +39,25 @@ def search_name(name: str):
     submit_button.click()
     WebDriverWait(driver, timeout).until(EC.url_changes(search_url))
     new_url = driver.current_url
+    log.info(f'{name} {new_url}')
     return new_url
 
 
 def main():
+    log.info('Start')
     species_list = get_species_list()
     species_urls = list()
     for record in species_list:
         latin, cn = record[0], record[1]
         url = search_name(latin)
-        species_urls.append((*record, url))
+        species_urls.append({'latin': latin, 'cn': cn, 'url': url})
 
     with open('species_url.json', 'w') as _:
         json.dump(species_urls, _, indent=True)
 
     driver.quit()
+    log.info('Done')
+
+
+if __name__ == '__main__':
+    main()
