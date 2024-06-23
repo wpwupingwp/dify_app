@@ -10,22 +10,47 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from config import profile_path
+from config import username, password
 
 timeout = 10
 output = Path(r'R:\out')
 if not output.exists():
     output.mkdir()
 options = Options()
-options.set_preference('profile', profile_path)
-# driver = webdriver.Firefox(options=options,)
-driver = webdriver.Firefox()
+# options.set_preference('profile', profile_path)
+options.enable_downloads = True
+driver = webdriver.Firefox(options=options)
+# driver = webdriver.Firefox()
 
 # 300 img per species
-max_n_img = 40
+max_n_img = 10
 search_url = 'https://ppbc.iplant.cn/search'
 search_id = 'txtlatin'
 submit_button_id = "btnok"
+
+
+def login() -> None:
+    # directly login with credentials
+    login_id = 'loginbtn'
+    submit_button_id = 'btnlog'
+    name_id = 'userInput'
+    pwd_id = 'userPwd'
+    user_id = 'loginname'
+    driver.get(search_url)
+    login_field = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, login_id)))
+    login_field.click()
+    name_field = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, name_id)))
+    pwd_field = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, pwd_id)))
+    submit_button = driver.find_element(By.ID, submit_button_id)
+    name_field.send_keys(username)
+    pwd_field.send_keys(password)
+    submit_button.click()
+    WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, user_id)))
+    return
 
 
 def get_species_list(list_file='species_list.csv') -> list:
@@ -58,11 +83,13 @@ def main():
         latin, cn = record[0], record[1]
         url = search_name(latin)
         species_urls.append({'latin': latin, 'cn': cn, 'url': url})
+        # todo,
         break
 
     with open('species_url.json', 'w') as _:
         json.dump(species_urls, _, indent=True)
     a = species_urls[0]['url']
+    login()
     b = get_img_links(a)
     c = get_img(b.pop())
     driver.quit()
@@ -104,7 +131,10 @@ def get_img(img_link: str):
     img_btn = WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((By.CLASS_NAME, 'img_yuantu')))
     img = img_btn.get_attribute('href')
-    driver.download_file(img, str(output))
+    log.info(f'Downloading {img}')
+    driver.get(img)
+    # driver.download_file(img, str(output))
+    t = input('quit?')
     log.info(f'{output} {img}')
 
 

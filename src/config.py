@@ -1,1 +1,3 @@
-profile_path = (r'C:\Users\Ping\AppData\Roaming\Mozilla\Firefox\Profiles\ke3qzjmn.default-release-1622600485459')
+with open('key', 'r') as _:
+    username = _.readline().strip()
+    password = _.readline().strip()
