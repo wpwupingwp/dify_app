@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from time import sleep
 import csv
 import re
 
@@ -12,8 +13,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from config import username, password, member_id, uuid_
 
-timeout = 30
-output = Path(r'R:\out')
+timeout = 60
+output = Path(r'F:\Rosaceae_img')
 if not output.exists():
     output.mkdir()
 options = Options()
@@ -27,18 +28,16 @@ action = webdriver.ActionChains(driver)
 # driver = webdriver.Firefox()
 
 # 300 img per species
-max_n_img = 10
+max_n_img = 300
 search_url = 'https://ppbc.iplant.cn/search'
-search_id = 'txtlatin'
-submit_button_id = "btnok"
 
 
 def login():
     driver.get(search_url)
-    driver.add_cookie({'name':'memberId', 'value': member_id})
+    driver.add_cookie({'name': 'MemberId', 'value': member_id})
     driver.add_cookie({'name': 'uuid', 'value': uuid_})
     c = driver.get_cookies()
-    print(c)
+    log.info(repr(c))
     return
 
 
@@ -79,6 +78,9 @@ def get_species_list(list_file='species_list.csv') -> list:
 
 def get_species_urls(species_list: list, skip=False):
     json_file = 'species_url.json'
+    if skip:
+        with open(json_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
     species_urls = list()
     for record in species_list:
         latin, cn = record[0], record[1]
@@ -86,12 +88,14 @@ def get_species_urls(species_list: list, skip=False):
         species_urls.append({'latin': latin, 'cn': cn, 'url': url})
         if skip:
             break
-    with open('species_url.json', 'w') as _:
+    with open(json_file, 'w') as _:
         json.dump(species_urls, _, indent=True)
     return species_urls
 
 
 def search_name(name: str):
+    search_id = 'txtlatin'
+    submit_button_id = "btnok"
     driver.get(search_url)
     name_field = WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((By.ID, search_id)))
@@ -122,7 +126,7 @@ def get_img_links(species_url: str) -> set:
         WebDriverWait(driver, 5.0)
         links_ = driver.find_elements(By.TAG_NAME, 'a')
         hrefs = [i.get_attribute('href') for i in links_]
-        print(hrefs)
+        log.info(f'{hrefs=}')
         links = [i for i in hrefs if '/tu/' in i]
         img_links |= set(links)
         if len(img_links) >= max_n_img or len(img_links) >= spcount:
@@ -133,7 +137,7 @@ def get_img_links(species_url: str) -> set:
     return img_links
 
 
-def get_img(img_link: str) -> Path:
+def get_img(img_link: str):
     driver.get(img_link)
     img_logo = WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((By.ID, 'viewer2')))
@@ -143,21 +147,23 @@ def get_img(img_link: str) -> Path:
     img_btn.click()
     img = img_btn.get_attribute('href')
     log.info(f'Downloading {img}')
-    log.info(f'{output} {img}')
-    return img
+    return
 
 
 def main():
-    login()
+    login2()
     log.info('Start')
     species_list = get_species_list()
     species_urls = get_species_urls(species_list, skip=True)
-    a = species_urls[0]['url']
-    b = get_img_links(a)
-    # login()
-    for i in b:
-        get_img(i)
+    for species_url in species_urls:
+        url = species_url['url']
+        img_links = get_img_links(url)
+        for link in img_links:
+            get_img(link)
+            sleep(0.5)
+        break
     driver.quit()
+    log.info(f'{output=}')
     log.info('Done')
 
 
