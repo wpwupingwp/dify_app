@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from config import username, password, member_id, uuid_
 
-timeout = 60
+timeout = 30
 output = Path(r'F:\Rosaceae_img')
 if not output.exists():
     output.mkdir()
@@ -63,8 +63,10 @@ def login2():
     user_id = WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((By.ID, user_id)))
     log.info(f'Logged as {user_id}')
-    cookie = driver.get_cookies()
-    return cookie
+    cookies = driver.get_cookies()
+    c = driver.get_cookies()
+    log.info(repr(c))
+    return cookies
 
 
 def get_species_list(list_file='species_list.csv') -> list:
@@ -108,7 +110,7 @@ def search_name(name: str):
     return new_url
 
 
-def get_img_links(species_url: str) -> set:
+def get_img_links(species_url: str) -> tuple:
     # Scroll to the bottom of the page until all content is loaded
     img_links = set()
     driver.get(species_url)
@@ -134,7 +136,7 @@ def get_img_links(species_url: str) -> set:
             break
         # else:
         #     last_height = new_height
-    return img_links
+    return tuple(img_links)
 
 
 def get_img(img_link: str):
@@ -146,22 +148,39 @@ def get_img(img_link: str):
         EC.element_to_be_clickable((By.CLASS_NAME, 'img_yuantu')))
     img_btn.click()
     img = img_btn.get_attribute('href')
-    log.info(f'Downloading {img}')
     return
 
 
+def get_name_links(species_urls: list, skip=False) -> Path:
+    json_file = Path('name_links.json')
+    if skip:
+        return json_file
+    name_links = dict()
+    for species_url in species_urls:
+        url = species_url['url']
+        name = species_url['latin']
+        img_links = get_img_links(url)
+        name_links[name] = img_links
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(name_links, f, indent=True)
+    return json_file
+
+
 def main():
+    login()
     login2()
     log.info('Start')
     species_list = get_species_list()
     species_urls = get_species_urls(species_list, skip=True)
-    for species_url in species_urls:
-        url = species_url['url']
-        img_links = get_img_links(url)
-        for link in img_links:
+    name_links_file = get_name_links(species_urls, skip=False)
+    with open(name_links_file, 'r', encoding='utf-8') as f:
+        name_links = json.load(f)
+    for name in name_links:
+        log.info(name)
+        for link in name_links[name]:
+            log.info(f'Download from {link}')
             get_img(link)
-            sleep(0.5)
-        break
+            sleep(1)
     driver.quit()
     log.info(f'{output=}')
     log.info('Done')
