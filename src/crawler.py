@@ -7,13 +7,14 @@ import re
 from loguru import logger as log
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+# from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from config import username, password, member_id, uuid_
 
-timeout = 30
+timeout = 60
 output = Path(r'F:\Rosaceae_img')
 if not output.exists():
     output.mkdir()
@@ -24,6 +25,15 @@ options.set_preference("browser.download.folderList", 2)
 options.set_preference("browser.download.manager.showWhenStarting", False)
 options.set_preference("browser.download.dir", str(output))
 driver = webdriver.Firefox(options=options)
+# options = webdriver.ChromeOptions()
+# options.add_argument("--start-maximized")
+# options.add_argument("--headless=new")
+# prefs = {'download.default_directory': str(output), 'directory_upgrade': True,
+#          'download.prompt_for_download': False,
+#          'download.directory_upgrade': True, 'safebrowsing.enabled': True}
+# options.add_experimental_option('prefs', prefs)
+# options.enable_downloads = True
+# driver = webdriver.Chrome(options=options)
 action = webdriver.ActionChains(driver)
 # driver = webdriver.Firefox()
 
@@ -139,18 +149,6 @@ def get_img_links(species_url: str) -> tuple:
     return tuple(img_links)
 
 
-def get_img(img_link: str):
-    driver.get(img_link)
-    img_logo = WebDriverWait(driver, timeout).until(
-        EC.presence_of_element_located((By.ID, 'viewer2')))
-    action.move_to_element(img_logo).perform()
-    img_btn = WebDriverWait(driver, timeout).until(
-        EC.element_to_be_clickable((By.CLASS_NAME, 'img_yuantu')))
-    img_btn.click()
-    img = img_btn.get_attribute('href')
-    return
-
-
 def get_name_links(species_urls: list, skip=False) -> Path:
     json_file = Path('name_links.json')
     if skip:
@@ -166,21 +164,60 @@ def get_name_links(species_urls: list, skip=False) -> Path:
     return json_file
 
 
+def get_img(img_link: str) -> Path:
+    driver.get(img_link)
+    img_logo = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, 'viewer2')))
+    action.move_to_element(img_logo).perform()
+    img_btn = WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable((By.CLASS_NAME, 'img_yuantu')))
+    before = set(output.glob('*.jpg'))
+    img_btn.click()
+    while True:
+        after = set(output.glob('*.jpg'))
+        increment = after - before
+        if increment:
+            log.info(f'Got {increment} of {len(increment)}')
+            break
+        else:
+            sleep(0.5)
+    # img = img_btn.get_attribute('href')
+    # driver.download_file(img, str(output))
+    return increment.pop()
+
+
 def main():
-    login()
-    login2()
     log.info('Start')
+    # account limit: 1000 img/day
+    login2()
+    # login()
     species_list = get_species_list()
     species_urls = get_species_urls(species_list, skip=True)
-    name_links_file = get_name_links(species_urls, skip=False)
+    name_links_file = get_name_links(species_urls, skip=True)
+    history = Path('url_file.json')
+    if history.exists():
+        url_file = json.loads(history.read_text())
+        log.info(f'Load {len(url_file)} records')
+    else:
+        url_file = dict()
     with open(name_links_file, 'r', encoding='utf-8') as f:
         name_links = json.load(f)
     for name in name_links:
         log.info(name)
+        skip = 0
         for link in name_links[name]:
+            if link in url_file:
+                skip += 1
+                log.info(f'Skip {skip}: {link}')
+                continue
             log.info(f'Download from {link}')
-            get_img(link)
-            sleep(1)
+            try:
+                filename = get_img(link)
+                url_file[link] = str(filename)
+            except Exception:
+                log.critical(f'{link} failed')
+            finally:
+                history.write_text(json.dumps(url_file))
     driver.quit()
     log.info(f'{output=}')
     log.info('Done')
