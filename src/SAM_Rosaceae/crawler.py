@@ -12,10 +12,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from config import username, password, member_id, uuid_
+from .config import username, password, member_id, uuid_, timeout, output
 
-timeout = 60
-output = Path(r'F:\Rosaceae_img_test')
 if not output.exists():
     output.mkdir()
 options = Options()
@@ -199,6 +197,8 @@ def main():
     if history.exists():
         url_file = json.loads(history.read_text())
         log.info(f'Load {len(url_file)} records')
+        if history2.exists():
+            url_file.update(json.loads(history2.read_text()))
     else:
         url_file = dict()
     with open(name_links_file, 'r', encoding='utf-8') as f:
