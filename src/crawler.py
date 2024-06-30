@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from config import username, password, member_id, uuid_
 
 timeout = 60
-output = Path(r'F:\Rosaceae_img')
+output = Path(r'F:\Rosaceae_img_test')
 if not output.exists():
     output.mkdir()
 options = Options()
@@ -38,7 +38,7 @@ action = webdriver.ActionChains(driver)
 # driver = webdriver.Firefox()
 
 # 300 img per species
-max_n_img = 300
+max_n_img = 600
 search_url = 'https://ppbc.iplant.cn/search'
 
 
@@ -195,6 +195,7 @@ def main():
     species_urls = get_species_urls(species_list, skip=True)
     name_links_file = get_name_links(species_urls, skip=True)
     history = Path('url_file.json')
+    history2 = Path('url_file_test_set.json')
     if history.exists():
         url_file = json.loads(history.read_text())
         log.info(f'Load {len(url_file)} records')
@@ -217,7 +218,7 @@ def main():
             except Exception:
                 log.critical(f'{link} failed')
             finally:
-                history.write_text(json.dumps(url_file))
+                history2.write_text(json.dumps(url_file))
     driver.quit()
     log.info(f'{output=}')
     log.info('Done')
