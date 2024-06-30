@@ -5,10 +5,19 @@ description = "LLM apps for plant"
 authors = [
     { name = "wp", email = "wpwupingwp@outlook.com" },
 ]
-dependencies = ['biopython', 'quart', 'uvicorn', 'aiohttp',
-    'torchmetrics', 'torch',
-    'selenium', 'beautifulsoup4', 'certifi', 'urllib3',
-    'loguru'
+dependencies = [
+    'biopython',
+    'quart',
+    'uvicorn',
+    'aiohttp',
+    'torchmetrics',
+    'selenium',
+    'beautifulsoup4',
+    'certifi',
+    'urllib3',
+    'loguru',
+    "torch>=2.3.1",
+    "numpy==1.24",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -16,6 +25,7 @@ license = { text = "AGPL-3" }
 
 [tool.pdm]
 distribution = false
-[project.script]
+
+[tool.rye.scripts]
 llm_server = 'uvicorn pubmed:app --port 2024'
 crawler = 'python src/crawler.py'
