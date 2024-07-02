@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from shutil import move
+from concurrent.futures import ProcessPoolExecutor
 
 import torch
 from imagededup.methods import PHash
@@ -27,9 +28,6 @@ def loader(folder: Path, pattern='*.jpg') -> tuple[Path, torch.Tensor]:
 
 
 def resize_image(input_folder: Path, output_folder: Path) -> Path:
-    # todo: need speedup
-    input_folder = input_folder.absolute()
-
     # resize_transform = transforms.Compose([
     #     transforms.ToPILImage(),
     #     transforms.Resize(TARGET_SIZE),
@@ -40,10 +38,8 @@ def resize_image(input_folder: Path, output_folder: Path) -> Path:
 
     for name, image in loader(input_folder):
         resized_image = transforms.Resize(TARGET_SIZE)(image)
-        log.info(f'Resize {name} from {image.shape} to {resized_image.shape}')
-        out_file = (output_folder / name.parent.name /
-                    name.with_suffix('.png').name)
-        log.info(out_file)
+        log.info(f'Resize {name.name} from {image.shape} to {resized_image.shape}')
+        out_file = (output_folder / name.with_suffix('.png').name)
         write_png(resized_image, str(out_file))
     return output_folder
 
@@ -90,11 +86,13 @@ if __name__ == '__main__':
     resized_dir = input_directory.parent / 'resized'
     log.info(f'Resized directory: {resized_dir}')
     resized_dir.mkdir(exist_ok=True)
-    for i in subfolders:
-        resized_folder = resized_dir / i.name
-        log.info(f'Create resized subfolder: {resized_folder}')
-        resized_folder.mkdir(exist_ok=True)
-    resized_folders = resize_image(input_directory, resized_dir)
+    with ProcessPoolExecutor() as executor:
+        for i in subfolders:
+            resized_folder = resized_dir / i.name
+            log.info(f'Create resized subfolder: {resized_folder}')
+            resized_folder.mkdir(exist_ok=True)
+            executor.submit(resize_image, i, resized_folder)
+
     raise Exception
     for subfolder in resized_folders:
         log.info(f'Processing {subfolder}')
