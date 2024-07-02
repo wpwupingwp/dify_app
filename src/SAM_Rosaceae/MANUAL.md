@@ -7,11 +7,19 @@ Split to train set and test set.
 
 ## Preprocess
 1. detect and remove duplicate images
-    - https://github.com/LexCybermac/smlr
-    - https://blog.bruun.dev/semantic-image-clustering-with-clip/
+
+Calculate hash and compare.
+
+   - Normal hash: strict identical
+   - Manual: slow, for verification
+   - pHASH: allow small difference 
+      - https://github.com/idealo/imagededup/tree/master
+      - https://github.com/xuehuachunsheng/DupImageDetection
 2. detect and remove low quality images
-    - score.py
+    CLIP-iqa method, with score.py
 3. cluster images
+   - https://github.com/LexCybermac/smlr
+   - https://blog.bruun.dev/semantic-image-clustering-with-clip/
 4. organize dataset. a. train/test; b. species. c. whole plant/organ. d. organ
 5. SAM label. Manual or automatic?
     - https://cloud.tencent.com/developer/article/2315237
