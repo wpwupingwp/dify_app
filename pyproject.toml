@@ -16,8 +16,9 @@ dependencies = [
     'certifi',
     'urllib3',
     'loguru',
-    "torch>=2.3.1",
-    "numpy==1.24",
+    'torch',
+    'torchvision',
+    "imagededup>=0.3.1",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -29,3 +30,7 @@ distribution = false
 [tool.rye.scripts]
 llm_server = 'uvicorn pubmed:app --port 2024'
 crawler = 'python src/crawler.py'
+
+[[tool.rye.sources]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu118"

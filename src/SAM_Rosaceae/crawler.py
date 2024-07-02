@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from .config import username, password, member_id, uuid_, timeout, output
+from config import username, password, member_id, uuid_, timeout, output
 
 if not output.exists():
     output.mkdir()
