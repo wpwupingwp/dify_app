@@ -1,11 +1,9 @@
 import json
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from shutil import copy, rmtree
 from shutil import move
 
 import torch
-import torchvision
 from PIL import Image
 from imagededup.methods import PHash
 from loguru import logger as log
@@ -14,7 +12,6 @@ from torchmetrics.multimodal import CLIPImageQualityAssessment as clip_iqa
 from torchvision.io import read_image, write_png
 from torchvision.transforms import v2 as transforms
 
-input_directory = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
 
 TARGET_SIZE = 512
 if torch.cuda.is_available():
@@ -72,7 +69,7 @@ def create_subfolders(folder: Path) -> list[Path]:
 
 
 def deduplicate(input_folder: Path) -> Path:
-    log.info(f'Processing {subfolder}')
+    log.info(f'Processing {input_folder}')
     json_file = input_folder / 'duplicates.json'
     if json_file.exists():
         log.warning(f'Found {json_file}, reload')
@@ -80,8 +77,8 @@ def deduplicate(input_folder: Path) -> Path:
         hasher = PHash()
         encodings = hasher.encode_images(image_dir=input_folder)
         duplicates = hasher.find_duplicates(encoding_map=encodings)
-        with open(input_folder / 'duplicates.json', 'w') as f:
-            json.dump(duplicates, f, indent=4)
+        with open(input_folder / 'duplicates.json', 'w', encoding='utf-8') as f:
+            json.dump(duplicates, f, indent=True, ensure_ascii=False)
     return json_file
 
 
@@ -93,8 +90,8 @@ def plot_images(image_dir: Path, orig: str, image_list: list, outfile: Path,
     Args:
         image_dir: image directory where all files in duplicate_map are present.
         orig: filename for which duplicates are to be plotted.
-        image_list: List of duplicate filenames, could also be with scores (filename, score).
-        scores: Whether only filenames are present in the image_list or scores as well.
+        image_list: List of duplicate filenames, or tuple (filename, score).
+        scores: Whether only filenames are present in the image_list or scores
         outfile:  Name of the file to save the plot.
     """
 
@@ -137,8 +134,8 @@ def parse_duplicate(info_json: Path) -> Path:
             v = [v, ]
         to_delete.extend(v)
     result = info_json.with_name('to_delete.json')
-    result.write_text(json.dumps(to_delete, indent=True, ensure_ascii=False,
-                                 encoding='utf-8'))
+    result.write_text(json.dumps(to_delete, indent=True, ensure_ascii=False),
+                      encoding='utf-8')
 
     image_folder = info_json.parent
     for image in duplicates:
@@ -153,11 +150,19 @@ def parse_duplicate(info_json: Path) -> Path:
     return result
 
 
-def score():
-
-    # model = 'openai/clip-vit-base-patch32'
-    model = 'openai/clip-vit-large-patch14'
+def score(input_folder: Path, low_score=0.3) -> Path:
+    """
+    use clip-iqa to filter low score images
+    Args:
+        input_folder:
+        low_score: score threshold
+    Returns:
+        low_score_json: Path
+    """
+    model_file = 'openai/clip-vit-large-patch32'
     data_range = 1.0
+    log.info(f'Loaded {model_file}')
+    log.info(f'Use {low_score} as low score threshold')
     # clip_iqa use 0-255, clip use 0-1.0
     # data_range = 255
     # model = 'clip_iqa'
@@ -167,80 +172,32 @@ def score():
                ('Plant photo', 'Not plant photo'),
                ('Flower photo', 'Not flower photo'),
                ('Leaf photo', 'Not leaf photo'))
+    model = clip_iqa(prompts=prompts, model_name_or_path=model_file,
+                     data_range=data_range).to('DEVICE')
+    score_json = input_folder / 'score.json'
+    low_score_json = input_folder / 'low_score.json'
+    log.info(f'Prompts:{prompts}')
+    img_score = list()
+    low_score_files = list()
 
-    # prompts = ('quality', 'brightness', 'noisiness', 'colorfullness', 'sharpness', 'contrast', 'complexity', 'natural', 'beautiful')
-    input_folder = Path('/tmp/a')
-    input_folder = Path('/media/ping/Data/Work/pics')
-    output_file = open('result.txt', 'w')
-    output_folder = Path('/tmp/out')
-
-    def scan_files(folder: Path) -> Path:
-        count = 0
-        PAUSE = 100
-        for img in folder.glob('*'):
-            if img.suffix in {'.jpg', '.png', '.jpeg'}:
-                yield img
-                count += 1
-                if count > PAUSE:
-                    pass
-
-
-    def analyze(img_score: list, output_folder: Path):
-        # prompt index
-        index = 0
-        # name, [value1, value2, ...]
-        img_score.sort(key=lambda x: x[1][index])
-        last_score = 'x'
-        count = 0
-        for r in img_score:
-            img, scores = r
-            score = scores[index]
-            s1 = str(score)[2]
-            if s1 != last_score:
-                count = 0
-                last_score = s1
-            if count > 9:
-                continue
-            p = Path(img)
-            new_name = output_folder / (s1+'-'+p.name)
-            copy(img, new_name)
-            count += 1
+    for img_file in loader(input_folder):
+        img = read_image(img_file).unsqueeze(0).to(DEVICE)
+        scores = model(img)
+        values = [i.item() for i in scores.values()]
+        quality = values[0]
+        if quality < low_score:
+            log.warning(f'Found low score image {img_file.name}: {quality:.3f}')
+            low_score_files.append((img_file, quality))
+        img_score.append((img_file, values))
+    score_json.write_text(json.dumps({'prompts': prompts, 'score': img_score},
+                          indent=True), encoding='utf-8')
+    low_score_json.write_text(json.dumps(low_score_files, indent=True),
+                              encoding='utf-8')
+    log.info(f'Found {len(low_score_files)} in {input_folder}')
+    return low_score_json
 
 
-    def main():
-        # log.add('iqa_{time}.log')
-        log.info('Start')
-        m = clip_iqa(prompts=prompts, model_name_or_path=model,).to('cuda')
-        # m = clip_iqa(prompts=prompts, model_name_or_path=model, data_range=255).to('cuda')
-        log.info('Model loaded')
-        log.info(f'Prompts:{prompts}')
-
-        output_file.write(str(prompts)+'\n')
-        if not output_folder.exists():
-            output_folder.mkdir()
-        else:
-            log.warning('Clean old output')
-            rmtree(output_folder)
-        log.info(f'Output folder {output_folder}')
-
-        log.info('Analyzing')
-        img_score = list()
-        for n, img_file in enumerate(loader(input_folder)):
-            log.info(f'{n} {img_file}')
-            # unsqueeze to 4-d tensor
-            img = read_image(img_file).unsqueeze(0).to('cuda')
-            s = m(img)
-            values = [i.item() for i in s.values()]
-            values_str = ','.join([f'{i:.2f}' for i in values])
-            output_file.write(f'{img_file},{values_str}\n')
-
-            img_score.append((img_file, values))
-        log.info('Sorting score')
-        analyze(img_score, output_folder)
-        log.info('Done')
-
-
-if __name__ == '__main__':
+def main(input_directory: Path):
     log.info(f'Input directory: {input_directory}')
     subfolders = create_subfolders(input_directory)
     resized_dir = input_directory.parent / 'resized'
@@ -268,3 +225,21 @@ if __name__ == '__main__':
         to_delete_list.extend(json.loads(to_delete.read_text(encoding='utf-8')))
     log.info(f'Found {len(to_delete_list)} duplicated images should be removed')
     log.info('Deduplicate finished')
+    log.info('Start scoring')
+    low_score_img = list()
+    for subfolder in resized_dir.glob('*'):
+        if subfolder.is_dir():
+            low_score_json = score(subfolder)
+            low_score_img.extend(json.loads(
+                low_score_json.read_text(encoding='utf-8')))
+    log.info('Delete/move low quality images')
+    for i in to_delete_list:
+        pass
+    for i in low_score_img:
+        pass
+    log.info('Done')
+
+
+if __name__ == '__main__':
+    input_directory = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
+    main(input_directory)
