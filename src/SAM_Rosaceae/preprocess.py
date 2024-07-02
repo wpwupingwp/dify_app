@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from shutil import move
 
@@ -17,17 +18,16 @@ else:
     log.critical('CUDA not available')
 
 
-def loader(folder: Path) -> tuple[Path, torch.Tensor]:
-    for subfolder in folder.glob('*'):
-        if subfolder.is_dir():
-            for filename in folder.glob('*.jpg'):
-                # data = read_image(filename).to(DEVICE)
-                data = read_image(filename)
-                yield filename, data
+def loader(folder: Path, pattern='*.jpg') -> tuple[Path, torch.Tensor]:
+    for img_file in folder.rglob(pattern):
+        # data = read_image(filename).to(DEVICE)
+        data = read_image(img_file)
+        yield img_file, data
 
 
 def resize_image(input_folder: Path):
     input_folder = input_folder.absolute()
+    log.info(f'Resizing {input_folder} to {TARGET_SIZE}')
     output_folder = input_folder.parent / (input_folder.name + '-512')
     output_folder = output_folder.absolute()
     if output_folder.exists():
@@ -68,6 +68,9 @@ def create_subfolders(folder: Path) -> list[Path]:
         move(filename.absolute(), subfolder/filename.name)
         n += 1
     log.info(f'Moved {n} files')
+    if len(subfolders) == 0:
+        subfolders = [i for i in folder.glob('*') if i.is_dir()]
+        log.info(f'Load {len(subfolders)} subfolders')
     return subfolders
 
 
@@ -75,6 +78,8 @@ def deduplicate(input_folder: Path) -> list[Path]:
     hasher = PHash()
     encodings = hasher.encode_images(image_dir=input_folder)
     duplicates = hasher.find_duplicates(encoding_map=encodings)
+    with open(input_folder / 'duplicates.json', 'w') as f:
+        json.dump(duplicates, f)
     print(duplicates)
     return
     # plot duplicates obtained for a given file using the duplicates dictionary
@@ -87,7 +92,9 @@ def deduplicate(input_folder: Path) -> list[Path]:
 
 if __name__ == '__main__':
     subfolders = create_subfolders(big_image_dir)
+    resize_image(big_image_dir)
+    raise Exception
     for subfolder in subfolders:
-        resize_image(subfolder)
+        log.info(f'Processing {subfolder}')
         deduplicate(subfolder)
         raise Exception
