@@ -64,14 +64,19 @@ def create_subfolders(folder: Path) -> list[Path]:
     return subfolders
 
 
-def deduplicate(input_folder: Path) -> list[Path]:
-    hasher = PHash()
-    encodings = hasher.encode_images(image_dir=input_folder)
-    duplicates = hasher.find_duplicates(encoding_map=encodings)
-    with open(input_folder / 'duplicates.json', 'w') as f:
-        json.dump(duplicates, f)
-    print(duplicates)
-    return
+def deduplicate(input_folder: Path) -> Path:
+    log.info(f'Processing {subfolder}')
+    json_file = input_folder / 'duplicates.json'
+    if json_file.exists():
+        log.warning(f'Found {json_file}, reload')
+        duplicates = json.loads(json_file.read_text())
+    else:
+        hasher = PHash()
+        encodings = hasher.encode_images(image_dir=input_folder)
+        duplicates = hasher.find_duplicates(encoding_map=encodings)
+        with open(input_folder / 'duplicates.json', 'w') as f:
+            json.dump(duplicates, f, indent=4)
+    return json_file
     # plot duplicates obtained for a given file using the duplicates dictionary
     # from imagededup.utils import plot_duplicates
     # plot_duplicates(image_dir='path/to/image/directory',
@@ -88,13 +93,17 @@ if __name__ == '__main__':
     resized_dir.mkdir(exist_ok=True)
     with ProcessPoolExecutor() as executor:
         for i in subfolders:
+            # skip
             resized_folder = resized_dir / i.name
-            log.info(f'Create resized subfolder: {resized_folder}')
-            resized_folder.mkdir(exist_ok=True)
-            executor.submit(resize_image, i, resized_folder)
-
-    raise Exception
-    for subfolder in resized_folders:
-        log.info(f'Processing {subfolder}')
+            if not resized_folder.exists():
+                log.info(f'Create resized subfolder: {resized_folder}')
+                resized_folder.mkdir()
+                executor.submit(resize_image, i, resized_folder)
+            else:
+                log.warning(f'Found {resized_folder}, skip')
+    log.info('Resize finished')
+    for subfolder in resized_dir.glob('*'):
+        if not subfolder.is_dir():
+            continue
         deduplicate(subfolder)
-        raise Exception
+    log.info('Deduplicate finished')
