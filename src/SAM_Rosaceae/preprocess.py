@@ -8,7 +8,7 @@ from loguru import logger as log
 from torchvision.io import read_image, write_png
 from torchvision.transforms import v2 as transforms
 
-big_image_dir = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
+input_directory = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
 
 TARGET_SIZE = 512
 if torch.cuda.is_available():
@@ -19,39 +19,33 @@ else:
 
 
 def loader(folder: Path, pattern='*.jpg') -> tuple[Path, torch.Tensor]:
-    for img_file in folder.rglob(pattern):
+    # avoid match new files
+    for img_file in list(folder.rglob(pattern)):
         # data = read_image(filename).to(DEVICE)
         data = read_image(img_file)
         yield img_file, data
 
 
-def resize_image(input_folder: Path):
+def resize_image(input_folder: Path, output_folder: Path) -> Path:
+    # todo: need speedup
     input_folder = input_folder.absolute()
-    log.info(f'Resizing {input_folder} to {TARGET_SIZE}')
-    output_folder = input_folder.parent / (input_folder.name + '-512')
-    output_folder = output_folder.absolute()
-    if output_folder.exists():
-        log.warning('Output directory already exists!')
-    output_folder.mkdir(exist_ok=True)
-    log.info(f'Output folder: {output_folder}')
 
     # resize_transform = transforms.Compose([
     #     transforms.ToPILImage(),
     #     transforms.Resize(TARGET_SIZE),
     #     transforms.PILToTensor(),
     # ])
-
-    for name, image in loader(input_folder):
-        # resized_image = resize_transform(image)
-        resized_image = transforms.Resize(TARGET_SIZE)(image)
-        log.info(f'Resize from {image.shape} to {resized_image.shape}')
-        out_file = output_folder / name.with_suffix('.png').name
-        log.info(out_file)
-        write_png(resized_image, str(output_folder/name.name))
-    return output_folder
-
     # dataset = ImageFolder(image_directory, transform=resize_transform)
     # dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
+
+    for name, image in loader(input_folder):
+        resized_image = transforms.Resize(TARGET_SIZE)(image)
+        log.info(f'Resize {name} from {image.shape} to {resized_image.shape}')
+        out_file = (output_folder / name.parent.name /
+                    name.with_suffix('.png').name)
+        log.info(out_file)
+        write_png(resized_image, str(out_file))
+    return output_folder
 
 
 def create_subfolders(folder: Path) -> list[Path]:
@@ -91,10 +85,18 @@ def deduplicate(input_folder: Path) -> list[Path]:
 
 
 if __name__ == '__main__':
-    subfolders = create_subfolders(big_image_dir)
-    resize_image(big_image_dir)
+    log.info(f'Input directory: {input_directory}')
+    subfolders = create_subfolders(input_directory)
+    resized_dir = input_directory.parent / 'resized'
+    log.info(f'Resized directory: {resized_dir}')
+    resized_dir.mkdir(exist_ok=True)
+    for i in subfolders:
+        resized_folder = resized_dir / i.name
+        log.info(f'Create resized subfolder: {resized_folder}')
+        resized_folder.mkdir(exist_ok=True)
+    resized_folders = resize_image(input_directory, resized_dir)
     raise Exception
-    for subfolder in subfolders:
+    for subfolder in resized_folders:
         log.info(f'Processing {subfolder}')
         deduplicate(subfolder)
         raise Exception
