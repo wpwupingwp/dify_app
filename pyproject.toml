@@ -18,7 +18,7 @@ dependencies = [
     'loguru',
     'torch',
     'torchvision',
-    "imagededup>=0.3.1",
+    'imagededup',
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -32,5 +32,7 @@ llm_server = 'uvicorn pubmed:app --port 2024'
 crawler = 'python src/crawler.py'
 
 [[tool.rye.sources]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cu118"
+name2 = "pytorch"
+url2 = "https://download.pytorch.org/whl/cu118"
+name = 'tencent'
+url = 'https://mirrors.cloud.tencent.com/pypi/simple'
