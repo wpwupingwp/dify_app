@@ -118,10 +118,23 @@ def plot_images(image_dir: Path, orig: str, image_list: list, outfile: Path,
     return outfile
 
 
-def parse_duplicate(info_json: Path):
-    data = json.loads(info_json.read_text())
-    duplicates = {k: v for k,v in data.items() if v}
-    log.info(f'Found {len(duplicates)} pairs of duplicates in {len(data)}')
+def parse_duplicate(info_json: Path) -> Path:
+    to_delete = []
+    duplicates = json.loads(info_json.read_text())
+    n_raw = len(duplicates)
+    for k, v in duplicates.items():
+        for _ in v:
+            if _ in duplicates:
+                duplicates[_] = []
+    duplicates = {k: v for k, v in duplicates.items() if v}
+    log.info(f'Found {len(duplicates)} pairs of duplicates in {n_raw}')
+    for k, v in duplicates.items():
+        if isinstance(v, (str, Path)):
+            v = [v, ]
+        to_delete.extend([k, *v, ''])
+    result = info_json.with_name('to_delete.json')
+    result.write_text(json.dumps(to_delete, indent=True, ensure_ascii=False))
+
     image_folder = info_json.parent
     for image in duplicates:
         retrieved = duplicates[image]
@@ -132,7 +145,7 @@ def parse_duplicate(info_json: Path):
         else:
             plot_images(image_dir=image_folder, orig=image,
                         image_list=retrieved, scores=False, outfile=outfile, )
-    return
+    return result
 
 
 if __name__ == '__main__':
