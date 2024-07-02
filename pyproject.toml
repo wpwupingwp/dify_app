@@ -19,6 +19,8 @@ dependencies = [
     'torch',
     'torchvision',
     'imagededup',
+    "transformers>=4.42.3",
+    "huggingface-cli>=0.1",
 ]
 requires-python = ">=3.11"
 readme = "README.md"

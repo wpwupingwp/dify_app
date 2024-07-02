@@ -12,7 +12,6 @@ from torchmetrics.multimodal import CLIPImageQualityAssessment as clip_iqa
 from torchvision.io import read_image, write_png
 from torchvision.transforms import v2 as transforms
 
-
 TARGET_SIZE = 512
 if torch.cuda.is_available():
     DEVICE = torch.device('cuda')
@@ -159,9 +158,9 @@ def score(input_folder: Path, low_score=0.3) -> Path:
     Returns:
         low_score_json: Path
     """
-    model_file = 'openai/clip-vit-large-patch32'
+    model_file = 'openai/clip-vit-large-patch14'
+    model_file = 'openai/clip-vit-base-patch32'
     data_range = 1.0
-    log.info(f'Loaded {model_file}')
     log.info(f'Use {low_score} as low score threshold')
     # clip_iqa use 0-255, clip use 0-1.0
     # data_range = 255
@@ -173,7 +172,8 @@ def score(input_folder: Path, low_score=0.3) -> Path:
                ('Flower photo', 'Not flower photo'),
                ('Leaf photo', 'Not leaf photo'))
     model = clip_iqa(prompts=prompts, model_name_or_path=model_file,
-                     data_range=data_range).to('DEVICE')
+                     data_range=data_range).to(DEVICE)
+    log.info(f'Loaded {model_file}')
     score_json = input_folder / 'score.json'
     low_score_json = input_folder / 'low_score.json'
     log.info(f'Prompts:{prompts}')

@@ -17,6 +17,10 @@ Calculate hash and compare.
       - https://github.com/xuehuachunsheng/DupImageDetection
 2. detect and remove low quality images
     CLIP-iqa method, with score.py
+```bash
+$env:HF_ENDPOINT = "https://hf-mirror.com"
+rye run huggingface-cli download openai/clip-vit-base-patch32 pytorch_model.bin
+```
 3. cluster images
    - https://github.com/LexCybermac/smlr
    - https://blog.bruun.dev/semantic-image-clustering-with-clip/
