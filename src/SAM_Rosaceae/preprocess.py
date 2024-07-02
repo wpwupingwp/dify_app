@@ -5,9 +5,13 @@ from concurrent.futures import ProcessPoolExecutor
 
 import torch
 from imagededup.methods import PHash
+from imagededup.utils import plot_duplicates
 from loguru import logger as log
 from torchvision.io import read_image, write_png
 from torchvision.transforms import v2 as transforms
+
+from matplotlib import pyplot as plt
+from PIL import Image
 
 input_directory = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
 
@@ -69,7 +73,6 @@ def deduplicate(input_folder: Path) -> Path:
     json_file = input_folder / 'duplicates.json'
     if json_file.exists():
         log.warning(f'Found {json_file}, reload')
-        duplicates = json.loads(json_file.read_text())
     else:
         hasher = PHash()
         encodings = hasher.encode_images(image_dir=input_folder)
@@ -77,12 +80,59 @@ def deduplicate(input_folder: Path) -> Path:
         with open(input_folder / 'duplicates.json', 'w') as f:
             json.dump(duplicates, f, indent=4)
     return json_file
-    # plot duplicates obtained for a given file using the duplicates dictionary
-    # from imagededup.utils import plot_duplicates
-    # plot_duplicates(image_dir='path/to/image/directory',
-    #                 duplicate_map=duplicates,
-    #                 filename='ukbench00120.jpg')
-    # pass
+
+
+def plot_images(image_dir: Path, orig: str, image_list: list, outfile: Path,
+                scores: bool = False) -> Path:
+    """
+    Plotting function for plot_duplicates() defined below.
+
+    Args:
+        image_dir: image directory where all files in duplicate_map are present.
+        orig: filename for which duplicates are to be plotted.
+        image_list: List of duplicate filenames, could also be with scores (filename, score).
+        scores: Whether only filenames are present in the image_list or scores as well.
+        outfile:  Name of the file to save the plot.
+    """
+
+    def simple_title(title: str):
+        # ppbc filename format
+        return title.split('_')[3]
+
+    fig = plt.figure(figsize=(5*len(image_list), 10))
+    _, ax_list = plt.subplots(nrows=1, ncols=len(image_list)+1)
+    ax = ax_list[0]
+    ax.imshow(Image.open(image_dir / orig))
+    ax.set_title(f'Original: {simple_title(orig)}')
+    for i, ax in enumerate(ax_list[1:]):
+        if scores:
+            ax.imshow(Image.open(image_dir / image_list[i][0]))
+            title = f'{simple_title(image_list[i][0])} ({image_list[i][1]:.2%}'
+        else:
+            ax.imshow(Image.open(image_dir / image_list[i]))
+            title = simple_title(image_list[i])
+        ax.set_title(title, fontsize=8)
+        ax.axis('off')
+    plt.savefig(outfile)
+    plt.close()
+    return outfile
+
+
+def parse_duplicate(info_json: Path):
+    data = json.loads(info_json.read_text())
+    duplicates = {k: v for k,v in data.items() if v}
+    log.info(f'Found {len(duplicates)} pairs of duplicates in {len(data)}')
+    image_folder = info_json.parent
+    for image in duplicates:
+        retrieved = duplicates[image]
+        outfile = image_folder / ('result-' + Path(image).name)
+        if isinstance(duplicates[image], tuple):
+            plot_images(image_dir=image_folder, orig=image,
+                        image_list=retrieved, scores=True, outfile=outfile, )
+        else:
+            plot_images(image_dir=image_folder, orig=image,
+                        image_list=retrieved, scores=False, outfile=outfile, )
+    return
 
 
 if __name__ == '__main__':
@@ -93,7 +143,6 @@ if __name__ == '__main__':
     resized_dir.mkdir(exist_ok=True)
     with ProcessPoolExecutor() as executor:
         for i in subfolders:
-            # skip
             resized_folder = resized_dir / i.name
             if not resized_folder.exists():
                 log.info(f'Create resized subfolder: {resized_folder}')
@@ -102,8 +151,12 @@ if __name__ == '__main__':
             else:
                 log.warning(f'Found {resized_folder}, skip')
     log.info('Resize finished')
+    log.info('Start deduplicating')
+    duplicate_info = list()
     for subfolder in resized_dir.glob('*'):
         if not subfolder.is_dir():
             continue
-        deduplicate(subfolder)
+        duplicate_info.append(deduplicate(subfolder))
+    for info_json in duplicate_info:
+        parse_duplicate(info_json)
     log.info('Deduplicate finished')
