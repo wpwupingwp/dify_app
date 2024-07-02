@@ -1,15 +1,13 @@
-import os
 from pathlib import Path
 from shutil import move
 
 import torch
+from imagededup.methods import PHash
 from loguru import logger as log
-from torchvision.transforms import v2 as transforms
-from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
 from torchvision.io import read_image, write_png
+from torchvision.transforms import v2 as transforms
 
-big_image_dir = Path(r'F:\IBCAS\SAM\Rosaceae_img')
+big_image_dir = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
 
 TARGET_SIZE = 512
 if torch.cuda.is_available():
@@ -17,7 +15,6 @@ if torch.cuda.is_available():
 else:
     DEVICE = 'cpu'
     log.critical('CUDA not available')
-log.info(f'Using {DEVICE}')
 
 
 def loader(folder: Path) -> tuple[Path, torch.Tensor]:
@@ -68,31 +65,29 @@ def create_subfolders(folder: Path) -> list[Path]:
         if not subfolder.exists():
             subfolder.mkdir()
             log.info(f'Created subfolder: {subfolder}')
-        move(filename, subfolder/filename)
+        move(filename.absolute(), subfolder/filename.name)
         n += 1
     log.info(f'Moved {n} files')
     return subfolders
 
 
 def deduplicate(input_folder: Path) -> list[Path]:
-    from imagededup.methods import PHash
-    phasher = PHash()
-
-    # Generate encodings for all images in an image directory
-    encodings = phasher.encode_images(image_dir='path/to/image/directory')
-
-    # Find duplicates using the generated encodings
-    duplicates = phasher.find_duplicates(encoding_map=encodings)
-
+    hasher = PHash()
+    encodings = hasher.encode_images(image_dir=input_folder)
+    duplicates = hasher.find_duplicates(encoding_map=encodings)
+    print(duplicates)
+    return
     # plot duplicates obtained for a given file using the duplicates dictionary
-    from imagededup.utils import plot_duplicates
-    plot_duplicates(image_dir='path/to/image/directory',
-                    duplicate_map=duplicates,
-                    filename='ukbench00120.jpg')
-    pass
+    # from imagededup.utils import plot_duplicates
+    # plot_duplicates(image_dir='path/to/image/directory',
+    #                 duplicate_map=duplicates,
+    #                 filename='ukbench00120.jpg')
+    # pass
 
 
 if __name__ == '__main__':
     subfolders = create_subfolders(big_image_dir)
     for subfolder in subfolders:
         resize_image(subfolder)
+        deduplicate(subfolder)
+        raise Exception
