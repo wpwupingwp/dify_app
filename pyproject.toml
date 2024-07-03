@@ -3,15 +3,38 @@ name = "dify_app"
 version = "0.1.0"
 description = "LLM apps for plant"
 authors = [
-    {name = "wp", email = "wpwupingwp@outlook.com"},
+    { name = "wp", email = "wpwupingwp@outlook.com" },
 ]
-dependencies = ['biopython', 'quart', 'uvicorn', 'aiohttp', 'torchmetrics',
-'torch']
-requires-python = "==3.11.*"
+dependencies = [
+    'biopython',
+    'quart',
+    'uvicorn',
+    'aiohttp',
+    'torchmetrics',
+    'selenium',
+    'beautifulsoup4',
+    'certifi',
+    'urllib3',
+    'loguru',
+    'torch',
+    'torchvision',
+    'imagededup',
+    "transformers>=4.42.3",
+    "huggingface-cli>=0.1",
+]
+requires-python = ">=3.11"
 readme = "README.md"
-license = {text = "AGPL-3"}
+license = { text = "AGPL-3" }
 
 [tool.pdm]
 distribution = false
-[project.script]
-test = 'uvicorn pubmed:app --port 2024'
+
+[tool.rye.scripts]
+llm_server = 'uvicorn pubmed:app --port 2024'
+crawler = 'python src/crawler.py'
+
+[[tool.rye.sources]]
+name2 = "pytorch"
+url2 = "https://download.pytorch.org/whl/cu118"
+name = 'tencent'
+url = 'https://mirrors.cloud.tencent.com/pypi/simple'

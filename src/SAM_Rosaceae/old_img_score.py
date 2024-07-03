@@ -11,7 +11,7 @@ data_range = 1.0
 # clip_iqa use 0-255, clip use 0-1.0
 # data_range = 255
 # model = 'clip_iqa'
-prompts = (('Good photo.', 'Bad photo.'), 
+prompts = (('Good photo.', 'Bad photo.'),
            ('Aesthetic photo.', 'Not aesthetic photo.'),
 #           ('Natural photo.', 'Synthetic photo.'),
 #           ('Plant photo', 'Not plant photo'),
@@ -78,7 +78,7 @@ def main():
     img_score = list()
     for n, img_file in enumerate(scan_files(input_folder)):
         log.info(f'{n} {img_file}')
-        # unsqueeze to 4-d tensor 
+        # unsqueeze to 4-d tensor
         img = torchvision.io.read_image(img_file).unsqueeze(0).to('cuda')
         s = m(img)
         values = [i.item() for i in s.values()]

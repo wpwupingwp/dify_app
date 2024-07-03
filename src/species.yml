@@ -449,8 +449,8 @@ workflow:
         desc: ''
         selected: false
         template: "<h1> {{ keywords }} </h1>\r\n<h2 {{ taxon }} </h2>\r\n<h3> \u7C7B\
-          \u7FA4\u7B80\u4ECB </h3>\r\n\r\n{% for key, value in gbif.items() %}\r\n\
-          {{ loop.index }}/{{ loop.length }}. {{ key }}: {{ value }}\r\n{% endfor\
+          \u7FA4\u7B80\u4ECB </h3>\r\n\r\n{% for config.py, value in gbif.items() %}\r\n\
+          {{ loop.index }}/{{ loop.length }}. {{ config.py }}: {{ value }}\r\n{% endfor\
           \ %}\r\n\r\n</br>\r\n{{ intro }}\r\n<h3> \u76F8\u5173\u8FD1\u671F\u6587\u732E\
           \ </h3>\r\n{{ paper }}"
         title: "\u6A21\u677F\u8F6C\u6362"
