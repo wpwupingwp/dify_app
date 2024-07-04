@@ -181,14 +181,18 @@ def score(input_folder: Path, low_score=0.3) -> Path:
     low_score_files = list()
 
     for img_file in loader(input_folder):
-        img = read_image(img_file).unsqueeze(0).to(DEVICE)
-        scores = model(img)
+        img = read_image(img_file).unsqueeze(0)
+        try:
+            scores = model(img)
+        except ValueError:
+            log.critical(f'Failed to get score of {img_file}')
+            continue
         values = [i.item() for i in scores.values()]
         quality = values[0]
         if quality < low_score:
             log.warning(f'Found low score image {img_file.name}: {quality:.3f}')
-            low_score_files.append((img_file, quality))
-        img_score.append((img_file, values))
+            low_score_files.append([str(img_file), quality])
+        img_score.append([str(img_file), values])
     score_json.write_text(json.dumps({'prompts': prompts, 'score': img_score},
                           indent=True), encoding='utf-8')
     low_score_json.write_text(json.dumps(low_score_files, indent=True),
