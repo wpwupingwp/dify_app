@@ -13,13 +13,13 @@ data_range = 1.0
 # model = 'clip_iqa'
 prompts = (('Good photo.', 'Bad photo.'),
            ('Aesthetic photo.', 'Not aesthetic photo.'),
-           ('Natural photo.', 'Synthetic photo.'),
-           ('Plant photo', 'Not plant photo'),
+#           ('Natural photo.', 'Synthetic photo.'),
+#           ('Plant photo', 'Not plant photo'),
            ('Flower photo', 'Not flower photo'),
            ('Leaf photo', 'Not leaf photo'))
 
 # prompts = ('quality', 'brightness', 'noisiness', 'colorfullness', 'sharpness', 'contrast', 'complexity', 'natural', 'beautiful')
-input_folder = Path('/tmp/a')
+# input_folder = Path('/tmp/a')
 input_folder = Path('/media/ping/Data/Work/pics')
 output_file = open('result.txt', 'w')
 output_folder = Path('/tmp/out')
@@ -27,17 +27,15 @@ output_folder = Path('/tmp/out')
 def scan_files(folder: Path) -> Path:
     count = 0
     PAUSE = 100
-    for img in folder.glob('*'):
-        if img.suffix in {'.jpg', '.png', '.jpeg'}:
+    for img in folder.rglob('*'):
+        if img.is_file() and  img.suffix in {'.jpg', '.png', '.jpeg'}:
             yield img
             count += 1
             if count > PAUSE:
                 pass
 
 
-def analyze(img_score: list, output_folder: Path):
-    # prompt index
-    index = 0
+def analyze(img_score: list, output_folder: Path, index=0):
     # name, [value1, value2, ...]
     img_score.sort(key=lambda x: x[1][index])
     last_score = 'x'
@@ -49,16 +47,18 @@ def analyze(img_score: list, output_folder: Path):
         if s1 != last_score:
             count = 0
             last_score = s1
-        if count > 9:
+        if count > 19:
             continue
         p = Path(img)
+        if not p.exists():
+            log.warning(f'Cannot find {p}')
         new_name = output_folder / (s1+'-'+p.name)
-        copy(img, new_name)
+        copy(p, new_name)
         count += 1
 
 
 def main():
-    # log.add('iqa_{time}.log')
+    log.add('iqa_{time}.log')
     log.info('Start')
     m = clip_iqa(prompts=prompts, model_name_or_path=model,).to('cuda')
     # m = clip_iqa(prompts=prompts, model_name_or_path=model, data_range=255).to('cuda')
@@ -71,6 +71,7 @@ def main():
     else:
         log.warning('Clean old output')
         rmtree(output_folder)
+        output_folder.mkdir()
     log.info(f'Output folder {output_folder}')
 
     log.info('Analyzing')
@@ -86,7 +87,12 @@ def main():
 
         img_score.append((img_file, values))
     log.info('Sorting score')
-    analyze(img_score, output_folder)
+    # quality
+    analyze(img_score, Path('/tmp/quality'), index=0)
+    # quality
+    analyze(img_score, Path('/tmp/beauty'), index=1)
+    # quality
+    analyze(img_score, Path('/tmp/flower'), index=-2)
     log.info('Done')
 
 
