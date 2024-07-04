@@ -21,8 +21,9 @@ dependencies = [
     'imagededup',
     "transformers>=4.42.3",
     "huggingface-cli>=0.1",
+    "segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
 ]
-requires-python = ">=3.11"
+requires-python = ">= 3.10"
 readme = "README.md"
 license = { text = "AGPL-3" }
 
@@ -34,7 +35,7 @@ llm_server = 'uvicorn pubmed:app --port 2024'
 crawler = 'python src/crawler.py'
 
 [[tool.rye.sources]]
-name2 = "pytorch"
-url2 = "https://download.pytorch.org/whl/cu118"
-name = 'tencent'
-url = 'https://mirrors.cloud.tencent.com/pypi/simple'
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu118"
+name2 = 'tencent'
+url2 = 'https://mirrors.cloud.tencent.com/pypi/simple'
