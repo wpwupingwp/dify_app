@@ -246,5 +246,5 @@ def main(input_directory: Path):
 
 
 if __name__ == '__main__':
-    input_directory = Path(r'F:\IBCAS\SAM\Rosaceae_img').absolute()
+    input_directory = Path(r'F:\IBCAS\SAM\Rosaceae').absolute()
     main(input_directory)
