@@ -10,7 +10,6 @@ dependencies = [
     'quart',
     'uvicorn',
     'aiohttp',
-    'torchmetrics',
     'selenium',
     'beautifulsoup4',
     'certifi',
@@ -22,6 +21,7 @@ dependencies = [
     "transformers>=4.42.3",
     "huggingface-cli>=0.1",
     "segment-anything @ git+https://github.com/facebookresearch/segment-anything.git",
+    "torchmetrics>1.3",
 ]
 requires-python = ">= 3.10"
 readme = "README.md"
@@ -35,7 +35,7 @@ llm_server = 'uvicorn pubmed:app --port 2024'
 crawler = 'python src/crawler.py'
 
 [[tool.rye.sources]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cu118"
-name2 = 'tencent'
-url2 = 'https://mirrors.cloud.tencent.com/pypi/simple'
+name3 = "pytorch"
+url3 = "https://download.pytorch.org/whl/cu118"
+name = 'tencent'
+url = 'https://mirrors.cloud.tencent.com/pypi/simple'

@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from shutil import move
@@ -20,7 +21,7 @@ else:
     log.critical('CUDA not available')
 
 
-def loader(folder: Path) -> Path:
+def loader(folder: Path) -> Iterable[Path]:
     # avoid match new files?
     for filename in list(folder.rglob('*')):
         if filename.suffix in {'.jpg', '.jpeg', '.png'}:
