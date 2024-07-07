@@ -25,16 +25,36 @@ def loader(folder: Path) -> Iterable[Path]:
     # avoid match new files?
     for filename in list(folder.rglob('*')):
         if filename.suffix in {'.jpg', '.jpeg', '.png'}:
-            yield filename
+            yield filename.absolute()
 
 
-def rename(old: Path,) -> Path:
+def parse_ppbc_name(name: Path) -> tuple[str, str, str, str] | None:
     # ppbc name: Prunus+armeniaca+L._杏_PPBC_2712691_朱鑫鑫_河南省_信阳市浉河区.jpg
-    img_id = old.name.split('_')[3]
-    new = old.with_name(img_id+old.suffix)
-    move(old, new)
-    return new
+    fields = name.name.split('_')
+    if len(fields) >= 3:
+        species_name, chinese_name, _, name_id = fields[:4]
+    else:
+        return None
+    suffix = name.suffix
+    return species_name, chinese_name, name_id, suffix
 
+
+def fake_delete(img: Path, name_dict: dict, dest: Path) -> Path:
+    log.info(f'Fake-delete {img}')
+    # move original file to deleted folder according to resized scored filename
+    print(list(name_dict.items()))
+    original_name, folder_name = name_dict[img.name]
+    original_name = Path(original_name)
+    folder_name = Path(folder_name)
+    old_name = original_name.parent / folder_name.name / img.name
+    new_folder = dest / folder_name.name
+    print(dest, new_folder)
+    if not new_folder.exists():
+        new_folder.mkdir()
+    new_name = new_folder / img.name
+    print(old_name, new_name)
+    move(old_name, new_name)
+    return new_name
 
 
 def resize_image(input_folder: Path, output_folder: Path) -> Path:
@@ -52,29 +72,37 @@ def resize_image(input_folder: Path, output_folder: Path) -> Path:
         resized_image = transforms.Resize(TARGET_SIZE)(image)
         log.info(f'Resize {filename.name} from {image.shape} to '
                  f'{resized_image.shape}')
-        out_file = (output_folder / filename.with_suffix('.png').name)
+        out_file = (output_folder / filename.name)
         write_png(resized_image, str(out_file))
     return output_folder
 
 
-def create_subfolders(folder: Path) -> list[Path]:
+def organize(folder: Path, name_file: Path) -> tuple[list[Path], dict]:
+    # rename files, create subfolders, move files
+    name_dict = dict()
     n = 0
     subfolders = list()
-    for filename in folder.glob('*.jpg'):
-        name = filename.name.split('+')
-        species_name = ' '.join(name[:2])
+    for filename in list(loader(folder)):
+        fields = parse_ppbc_name(filename)
+        if fields is None:
+            continue
+        species_name, _, name_id, suffix = fields
         subfolder = folder / species_name
-        subfolders.append(subfolder)
         if not subfolder.exists():
+            subfolders.append(subfolder)
             subfolder.mkdir()
             log.info(f'Created subfolder: {subfolder}')
-        move(filename.absolute(), subfolder/filename.name)
+        # label studio only accept simple filename
+        new_name = subfolder / (name_id+suffix)
+        name_dict[new_name.name] = (str(filename), str(subfolder))
+        move(filename, new_name)
         n += 1
     log.info(f'Moved {n} files')
     if len(subfolders) == 0:
         subfolders = [i for i in folder.glob('*') if i.is_dir()]
         log.info(f'Load {len(subfolders)} subfolders')
-    return subfolders
+    name_file.write_text(json.dumps(name_dict))
+    return subfolders, name_dict
 
 
 def deduplicate(input_folder: Path) -> Path:
@@ -155,7 +183,7 @@ def parse_duplicate(info_json: Path) -> Path:
     return result
 
 
-def score(input_folder: Path, low_score=0.3) -> Path:
+def score(input_folder: Path, low_score=0.25) -> Path:
     """
     use clip-iqa to filter low score images
     Args:
@@ -164,7 +192,6 @@ def score(input_folder: Path, low_score=0.3) -> Path:
     Returns:
         low_score_json: Path
     """
-    model_file = 'openai/clip-vit-large-patch14'
     model_file = 'openai/clip-vit-base-patch32'
     data_range = 1.0
     log.info(f'Use {low_score} as low score threshold')
@@ -182,6 +209,9 @@ def score(input_folder: Path, low_score=0.3) -> Path:
     log.info(f'Loaded {model_file}')
     score_json = input_folder / 'score.json'
     low_score_json = input_folder / 'low_score.json'
+    if low_score_json.exists():
+        log.warning(f'Found {low_score_json}, reload')
+        return low_score_json
     log.info(f'Prompts:{prompts}')
     img_score = list()
     low_score_files = list()
@@ -203,24 +233,16 @@ def score(input_folder: Path, low_score=0.3) -> Path:
                           indent=True), encoding='utf-8')
     low_score_json.write_text(json.dumps(low_score_files, indent=True),
                               encoding='utf-8')
-    log.info(f'Found {len(low_score_files)} in {input_folder}')
+    log.info(f'Found {len(low_score_files)} low-score images in {input_folder}')
     return low_score_json
 
 
 def main(input_directory: Path):
     log.info(f'Input directory: {input_directory}')
-    subfolders = create_subfolders(input_directory)
-
-    log.info(f'Renaming files ')
-    # label studio only accept simple filename
-    name_dict = dict()
+    log.info(f'Organizing files ')
     name_file = input_directory / 'name_info.json'
-    for img_file in loader(input_directory):
-        new_name = rename(img_file)
-        name_dict[str(new_name)] = str(img_file)
-    name_file.write_text(json.dumps(name_dict))
-    log.info(f'Renamed {len(name_dict)} files')
-    log.info(f'Rename records: {name_file}')
+    subfolders, name_dict = organize(input_directory, name_file)
+    log.info(f'See {name_file} for organize history')
 
     resized_dir = input_directory.parent / 'resized'
     log.info(f'Resized directory: {resized_dir}')
@@ -242,26 +264,32 @@ def main(input_directory: Path):
         if not subfolder.is_dir():
             continue
         duplicate_info.append(deduplicate(subfolder))
-    to_delete_list = list()
+    duplicate_list = list()
     for info_json in duplicate_info:
-        to_delete = parse_duplicate(info_json)
-        to_delete_list.extend(json.loads(to_delete.read_text(encoding='utf-8')))
-    log.info(f'Found {len(to_delete_list)} duplicated images should be removed')
+        duplicates = parse_duplicate(info_json)
+        duplicate_list.extend(json.loads(duplicates.read_text(
+            encoding='utf-8')))
+    log.info(f'Found {len(duplicate_list)} duplicated images should be removed')
     log.info('Deduplicate finished')
 
     log.info('Start scoring')
-    low_score_img = list()
+    low_score_list = list()
     for subfolder in resized_dir.glob('*'):
         if subfolder.is_dir():
             low_score_json = score(subfolder)
-            low_score_img.extend(json.loads(
+            low_score_list.extend(json.loads(
                 low_score_json.read_text(encoding='utf-8')))
+    log.info(f'Found {len(low_score_list)} low quality images')
 
-    log.info('Delete/move low quality images')
-    for i in to_delete_list:
-        pass
-    for i in low_score_img:
-        pass
+    log.info('Fake-delete low quality or duplicated images')
+    delete_folder = input_directory.parent / 'delete'
+    delete_folder.mkdir()
+    log.info(f'Move them to {delete_folder}')
+    for i in duplicate_list:
+        fake_delete(Path(i), name_dict, delete_folder)
+    for j in low_score_list:
+        fake_delete(Path(j), name_dict, delete_folder)
+    log.info(f'Fake-deleted {len(low_score_list)+len(duplicate_list)} images')
     log.info('Done')
 
 
