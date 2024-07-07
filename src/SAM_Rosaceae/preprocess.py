@@ -28,6 +28,15 @@ def loader(folder: Path) -> Iterable[Path]:
             yield filename
 
 
+def rename(old: Path,) -> Path:
+    # ppbc name: Prunus+armeniaca+L._杏_PPBC_2712691_朱鑫鑫_河南省_信阳市浉河区.jpg
+    img_id = old.name.split('_')[3]
+    new = old.with_name(img_id+old.suffix)
+    move(old, new)
+    return new
+
+
+
 def resize_image(input_folder: Path, output_folder: Path) -> Path:
     # resize_transform = transforms.Compose([
     #     transforms.ToPILImage(),
@@ -95,22 +104,18 @@ def plot_images(image_dir: Path, orig: str, image_list: list, outfile: Path,
         outfile:  Name of the file to save the plot.
     """
 
-    def simple_title(title: str):
-        # ppbc filename format
-        return title.split('_')[3]
-
     fig = plt.figure(figsize=(5*len(image_list), 10))
     _, ax_list = plt.subplots(nrows=1, ncols=len(image_list)+1)
     ax = ax_list[0]
     ax.imshow(Image.open(image_dir / orig))
-    ax.set_title(f'Original: {simple_title(orig)}')
+    ax.set_title(f'Original: {orig}')
     for i, ax in enumerate(ax_list[1:]):
         if scores:
             ax.imshow(Image.open(image_dir / image_list[i][0]))
-            title = f'{simple_title(image_list[i][0])} ({image_list[i][1]:.2%}'
+            title = f'{image_list[i][0]} ({image_list[i][1]:.2%}'
         else:
             ax.imshow(Image.open(image_dir / image_list[i]))
-            title = simple_title(image_list[i])
+            title = image_list[i]
         ax.set_title(title, fontsize=8)
         ax.axis('off')
     plt.savefig(outfile)
@@ -205,6 +210,18 @@ def score(input_folder: Path, low_score=0.3) -> Path:
 def main(input_directory: Path):
     log.info(f'Input directory: {input_directory}')
     subfolders = create_subfolders(input_directory)
+
+    log.info(f'Renaming files ')
+    # label studio only accept simple filename
+    name_dict = dict()
+    name_file = input_directory / 'name_info.json'
+    for img_file in loader(input_directory):
+        new_name = rename(img_file)
+        name_dict[str(new_name)] = str(img_file)
+    name_file.write_text(json.dumps(name_dict))
+    log.info(f'Renamed {len(name_dict)} files')
+    log.info(f'Rename records: {name_file}')
+
     resized_dir = input_directory.parent / 'resized'
     log.info(f'Resized directory: {resized_dir}')
     resized_dir.mkdir(exist_ok=True)
@@ -218,6 +235,7 @@ def main(input_directory: Path):
             else:
                 log.warning(f'Found {resized_folder}, skip')
     log.info('Resize finished')
+
     log.info('Start deduplicating')
     duplicate_info = list()
     for subfolder in resized_dir.glob('*'):
@@ -230,6 +248,7 @@ def main(input_directory: Path):
         to_delete_list.extend(json.loads(to_delete.read_text(encoding='utf-8')))
     log.info(f'Found {len(to_delete_list)} duplicated images should be removed')
     log.info('Deduplicate finished')
+
     log.info('Start scoring')
     low_score_img = list()
     for subfolder in resized_dir.glob('*'):
@@ -237,6 +256,7 @@ def main(input_directory: Path):
             low_score_json = score(subfolder)
             low_score_img.extend(json.loads(
                 low_score_json.read_text(encoding='utf-8')))
+
     log.info('Delete/move low quality images')
     for i in to_delete_list:
         pass
@@ -246,5 +266,6 @@ def main(input_directory: Path):
 
 
 if __name__ == '__main__':
-    input_directory = Path(r'F:\IBCAS\SAM\Rosaceae').absolute()
+    # input_directory = Path(r'F:\IBCAS\SAM\Rosaceae').absolute()
+    input_directory = Path(r'R:\a').absolute()
     main(input_directory)
