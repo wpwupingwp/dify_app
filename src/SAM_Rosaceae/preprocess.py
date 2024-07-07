@@ -230,7 +230,7 @@ def score(input_folder: Path, low_score=0.25) -> Path:
         quality = values[0]
         if quality < low_score:
             log.warning(f'Found low score image {img_file.name}: {quality:.3f}')
-            low_score_files.append([str(img_file), quality])
+            low_score_files.append(str(img_file))
         img_score.append([str(img_file), values])
     score_json.write_text(json.dumps({'prompts': prompts, 'score': img_score},
                           indent=4), encoding='utf-8')
