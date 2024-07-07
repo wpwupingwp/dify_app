@@ -50,7 +50,11 @@ def fake_delete(img: Path, name_dict: dict, dest: Path) -> Path:
     if not new_folder.exists():
         new_folder.mkdir()
     new_name = new_folder / img.name
-    move(old_name, new_name)
+    try:
+        move(old_name, new_name)
+    except FileNotFoundError:
+        log.error(f'Failed to delete {img}')
+        return img
     return new_name
 
 
@@ -98,7 +102,8 @@ def organize(folder: Path, name_file: Path) -> tuple[list[Path], dict]:
     if len(subfolders) == 0:
         subfolders = [i for i in folder.glob('*') if i.is_dir()]
         log.info(f'Load {len(subfolders)} subfolders')
-    name_file.write_text(json.dumps(name_dict))
+    name_file.write_text(json.dumps(name_dict, indent=4, ensure_ascii=False),
+                         encoding='utf-8')
     return subfolders, name_dict
 
 
@@ -112,7 +117,7 @@ def deduplicate(input_folder: Path) -> Path:
         encodings = hasher.encode_images(image_dir=input_folder)
         duplicates = hasher.find_duplicates(encoding_map=encodings)
         with open(input_folder / 'duplicates.json', 'w', encoding='utf-8') as f:
-            json.dump(duplicates, f, indent=True, ensure_ascii=False)
+            json.dump(duplicates, f, indent=4, ensure_ascii=False)
     return json_file
 
 
@@ -165,7 +170,7 @@ def parse_duplicate(info_json: Path) -> Path:
             v = [v, ]
         to_delete.extend(v)
     result = info_json.with_name('to_delete.json')
-    result.write_text(json.dumps(to_delete, indent=True, ensure_ascii=False),
+    result.write_text(json.dumps(to_delete, indent=4, ensure_ascii=False),
                       encoding='utf-8')
 
     image_folder = info_json.parent
@@ -228,8 +233,8 @@ def score(input_folder: Path, low_score=0.25) -> Path:
             low_score_files.append([str(img_file), quality])
         img_score.append([str(img_file), values])
     score_json.write_text(json.dumps({'prompts': prompts, 'score': img_score},
-                          indent=True), encoding='utf-8')
-    low_score_json.write_text(json.dumps(low_score_files, indent=True),
+                          indent=4), encoding='utf-8')
+    low_score_json.write_text(json.dumps(low_score_files, indent=4),
                               encoding='utf-8')
     log.info(f'Found {len(low_score_files)} low-score images in {input_folder}')
     return low_score_json
@@ -293,5 +298,5 @@ def main(input_directory: Path):
 
 if __name__ == '__main__':
     # input_directory = Path(r'F:\IBCAS\SAM\Rosaceae').absolute()
-    input_directory = Path(r'R:\a').absolute()
+    input_directory = Path(r'/media/ping/Data/Work/Rosaceae').absolute()
     main(input_directory)
