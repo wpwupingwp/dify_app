@@ -42,17 +42,14 @@ def parse_ppbc_name(name: Path) -> tuple[str, str, str, str] | None:
 def fake_delete(img: Path, name_dict: dict, dest: Path) -> Path:
     log.info(f'Fake-delete {img}')
     # move original file to deleted folder according to resized scored filename
-    print(list(name_dict.items()))
     original_name, folder_name = name_dict[img.name]
     original_name = Path(original_name)
     folder_name = Path(folder_name)
     old_name = original_name.parent / folder_name.name / img.name
     new_folder = dest / folder_name.name
-    print(dest, new_folder)
     if not new_folder.exists():
         new_folder.mkdir()
     new_name = new_folder / img.name
-    print(old_name, new_name)
     move(old_name, new_name)
     return new_name
 
@@ -135,6 +132,7 @@ def plot_images(image_dir: Path, orig: str, image_list: list, outfile: Path,
     fig = plt.figure(figsize=(5*len(image_list), 10))
     _, ax_list = plt.subplots(nrows=1, ncols=len(image_list)+1)
     ax = ax_list[0]
+    ax.axis('off')
     ax.imshow(Image.open(image_dir / orig))
     ax.set_title(f'Original: {orig}')
     for i, ax in enumerate(ax_list[1:]):
