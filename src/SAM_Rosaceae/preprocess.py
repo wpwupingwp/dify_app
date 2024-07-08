@@ -42,6 +42,9 @@ def parse_ppbc_name(name: Path) -> tuple[str, str, str, str] | None:
 def fake_delete(img: Path, name_dict: dict, dest: Path) -> Path:
     log.info(f'Fake-delete {img}')
     # move original file to deleted folder according to resized scored filename
+    if img.name not in name_dict:
+        log.warning('Failed to delete {img}')
+        return img
     original_name, folder_name = name_dict[img.name]
     original_name = Path(original_name)
     folder_name = Path(folder_name)
